@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes, viewport-fit=cover">
+  <title>隧道照度检测 ·Geronimo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #f5f7fb; font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+      padding: 16px 12px 32px; color: #1e2b3c; min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .title-wrapper { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 6px; }
+    h1 { font-weight: 500; font-size: 1.9rem; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin: 0; }
+    .tunnel-name-input {
+      font-size: 1.9rem; font-weight: 500; color: #1e3b5c; background: transparent;
+      border: none; border-bottom: 3px dashed #7f9eb5; padding: 0 4px 2px;
+      min-width: 150px; max-width: 280px; outline: none; line-height: 1.3;
+    }
+    .tunnel-name-input:focus { border-bottom-color: #1e3b5c; border-bottom-style: solid; }
+    h1 small { font-size: 0.8rem; background: #e6edf4; padding: 4px 12px; border-radius: 30px; }
+
+    .subhead { color: #4a627a; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #d0dde9; display: flex; justify-content: space-between; flex-wrap: wrap; }
+
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      background: white; border: 1px solid #b6c9db; padding: 10px 16px; border-radius: 40px;
+      font-size: 0.9rem; font-weight: 500; color: #1e3b5c; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.95);
+      touch-action: manipulation; white-space: nowrap;
+    }
+    .btn:active { background: #d4e0ec; transform: scale(0.97); }
+    .btn.capture { background: #2e5f4b; border-color: #1d4536; color: white; }
+    .btn.excel { background: #1f6e43; border-color: #165a35; color: white; }
+    .btn.add-section { background: #2c6280; border-color: #1e4a63; color: white; }
+
+    .projects-grid { display: grid; grid-template-columns: 1fr; gap: 18px; margin: 20px 0; }
+    @media (min-width: 700px) { .projects-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1100px) { .projects-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    /* 卡片 */
+    .project-card {
+      background: rgba(255,255,255,0.98); backdrop-filter: blur(8px); border-radius: 24px;
+      padding: 18px 14px 16px; box-shadow: 0 8px 20px -6px rgba(18,45,70,0.12);
+      border: 1px solid #eef3f8;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px; border-bottom: 1px dashed #b8cfe3; padding-bottom: 8px;
+    }
+    .section-name-input {
+      font-weight: 600; font-size: 1.3rem; color: #103247; background: transparent;
+      border: none; border-bottom: 2px dotted #a0bbcf; padding: 2px 4px; width: 140px; outline: none;
+    }
+    .delete-section-btn {
+      background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #9babbc;
+      padding: 4px 8px; border-radius: 30px;
+    }
+    .delete-section-btn:active { color: #c0354c; background: #fce4e8; }
+    .unit-badge { background: #d4e0ec; padding: 2px 10px; border-radius: 30px; font-size: 0.7rem; }
+
+    /* 数据行容器 */
+    .rows-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+    .data-row {
+      display: flex; align-items: center; gap: 6px; background: #fafcff; padding: 8px 8px;
+      border-radius: 18px; border: 1px solid #e2eaf2;
+    }
+    .row-inputs {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; flex: 1;
+    }
+    .input-cell { display: flex; flex-direction: column; align-items: center; }
+    .input-cell label { font-size: 0.6rem; color: #496f8b; margin-bottom: 2px; }
+    .input-cell input {
+      width: 100%; padding: 6px 2px; text-align: center; font-size: 0.85rem; font-weight: 500;
+      border: 1.5px solid #d7e1e9; border-radius: 12px; background: white; outline: none;
+      -moz-appearance: textfield;
+    }
+    .input-cell input:focus { border-color: #2f6c9f; box-shadow: 0 0 0 2px rgba(47,108,159,0.1); }
+    .input-cell input::placeholder { color: #9bb1c2; font-size: 0.65rem; }
+    .row-delete-btn {
+      background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #a0b5c7;
+      padding: 6px 8px; border-radius: 30px; align-self: center;
+    }
+    .row-delete-btn:active { color: #c0354c; background: #fce4e8; }
+
+    .add-row-btn {
+      background: #eef3f8; border: 1px dashed #7f9eb5; border-radius: 30px; padding: 8px 12px;
+      font-size: 0.85rem; color: #1e3b5c; cursor: pointer; text-align: center;
+      margin-top: 4px; transition: background 0.15s;
+    }
+    .add-row-btn:active { background: #d9e4ee; }
+
+    .card-avg-box {
+      background: #e3edf6; border-radius: 40px; padding: 10px 14px; display: flex;
+      align-items: center; justify-content: space-between; margin-top: 8px; border: 1px solid #c7dae9;
+    }
+    .avg-label { font-weight: 600; color: #1a445b; font-size: 0.85rem; }
+    .avg-value {
+      font-weight: 700; font-size: 1.3rem; color: #0c3e5c; background: #ffffffc2;
+      padding: 4px 16px; border-radius: 60px; min-width: 80px; text-align: center;
+    }
+
+    .footer-note { margin-top: 18px; font-size: 0.75rem; color: #6b8da3; display: flex; justify-content: space-between; }
+    .action-bar { display: flex; justify-content: space-between; margin: 10px 0 5px; flex-wrap: wrap; gap: 10px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div id="captureArea">
+    <div class="title-wrapper">
+      <h1>
+        🚇 <input type="text" id="tunnelNameInput" class="tunnel-name-input" value="连城山" placeholder="隧道名称" maxlength="30">
+        <span>照度检测</span> <small>横向七点 · 纵向可扩展</small>
+      </h1>
+    </div>
+    <div class="subhead">
+      <span>📋作者：Geronimo</span>
+    </div>
+    <div id="projectsContainer" class="projects-grid"></div>
+  </div>
+
+  <div class="action-bar">
+    <div class="toolbar">
+      <button class="btn add-section" id="addSectionBtn">➕ 添加区段</button>
+      <button class="btn" id="fillSampleBtn">📋 示例</button>
+      <button class="btn" id="clearAllBtn">🧹 清空</button>
+    </div>
+    <div class="toolbar">
+      <button class="btn excel" id="exportExcelBtn">📊 导出Excel</button>
+      <button class="btn capture" id="saveImageBtn">📸 保存图片</button>
+    </div>
+  </div>
+  <div class="footer-note">
+    <span>✏️ 点击区段名可编辑 · 每组可独立删除 · 至少保留一组</span>
+    <span>⏺ 空值不计入平均</span>
+  </div>
+</div>
+
+<script>
+  (function(){
+    "use strict";
+    const MEASURE_COLS = 7;
+    const DEFAULT_SECTIONS = ["入口1", "入口2", "过渡1", "过渡2", "中间1", "中间2", "出口1", "出口2"];
+
+    const container = document.getElementById('projectsContainer');
+    const captureArea = document.getElementById('captureArea');
+
+    // ---------- 计算卡片内所有输入的平均 ----------
+    function calculateCardAverage(card) {
+      const inputs = card.querySelectorAll('input[type="number"]');
+      let sum = 0, count = 0;
+      inputs.forEach(inp => {
+        const v = inp.value.trim();
+        if (v === '') return;
+        const num = parseFloat(v);
+        if (!isNaN(num) && isFinite(num)) { sum += num; count++; }
+      });
+      return count === 0 ? { avg: null, count } : { avg: sum / count, count };
+    }
+
+    function updateCardAverageDisplay(card) {
+      const avgSpan = card.querySelector('.avg-value');
+      if (!avgSpan) return;
+      const { avg } = calculateCardAverage(card);
+      avgSpan.innerHTML = avg !== null ? `${avg.toFixed(2)}<span style="font-size:0.75rem;">lx</span>` : `—<span style="font-size:0.75rem;">lx</span>`;
+    }
+
+    // 刷新所有卡片的平均显示
+    function refreshAllAverages() {
+      document.querySelectorAll('.project-card').forEach(c => updateCardAverageDisplay(c));
+    }
+
+    // ---------- 创建一行输入 (7个测点) ----------
+    function createDataRow() {
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'data-row';
+      
+      const inputsWrapper = document.createElement('div');
+      inputsWrapper.className = 'row-inputs';
+      
+      for (let i = 1; i <= MEASURE_COLS; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'input-cell';
+        cell.innerHTML = `<label>${i}</label>`;
+        const inp = document.createElement('input');
+        inp.type = 'number'; inp.step = 'any'; inp.min = '0'; inp.inputMode = 'decimal';
+        inp.placeholder = i;
+        inp.addEventListener('input', () => {
+          const card = rowDiv.closest('.project-card');
+          if (card) updateCardAverageDisplay(card);
+        });
+        cell.appendChild(inp);
+        inputsWrapper.appendChild(cell);
+      }
+      
+      const delBtn = document.createElement('button');
+      delBtn.className = 'row-delete-btn';
+      delBtn.innerHTML = '✕';
+      delBtn.title = '删除该组';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const rowsContainer = rowDiv.closest('.rows-container');
+        if (!rowsContainer) return;
+        const allRows = rowsContainer.querySelectorAll('.data-row');
+        if (allRows.length <= 1) {
+          alert('每个区段至少保留一组数据');
+          return;
+        }
+        rowDiv.remove();
+        const card = rowsContainer.closest('.project-card');
+        if (card) updateCardAverageDisplay(card);
+      });
+      
+      rowDiv.appendChild(inputsWrapper);
+      rowDiv.appendChild(delBtn);
+      return rowDiv;
+    }
+
+    // ---------- 创建一个完整卡片 (默认含一行) ----------
+    function createCard(sectionName = '新区段') {
+      const card = document.createElement('div');
+      card.className = 'project-card';
+      
+      // 头部
+      const header = document.createElement('div');
+      header.className = 'card-header';
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text'; nameInput.className = 'section-name-input';
+      nameInput.value = sectionName; nameInput.placeholder = '区段名'; nameInput.maxLength = 20;
+      const rightSpan = document.createElement('span');
+      rightSpan.style.display = 'flex'; rightSpan.style.alignItems = 'center'; rightSpan.style.gap = '6px';
+      const unitBadge = document.createElement('span');
+      unitBadge.className = 'unit-badge'; unitBadge.textContent = 'lux';
+      const delSectionBtn = document.createElement('button');
+      delSectionBtn.className = 'delete-section-btn'; delSectionBtn.innerHTML = '✕';
+      delSectionBtn.title = '删除整个区段';
+      rightSpan.appendChild(unitBadge); rightSpan.appendChild(delSectionBtn);
+      header.appendChild(nameInput); header.appendChild(rightSpan);
+      
+      // 行容器
+      const rowsContainer = document.createElement('div');
+      rowsContainer.className = 'rows-container';
+      rowsContainer.appendChild(createDataRow());
+      
+      // 添加行按钮
+      const addRowBtn = document.createElement('div');
+      addRowBtn.className = 'add-row-btn';
+      addRowBtn.innerHTML = '➕ 添加一组数据';
+      addRowBtn.addEventListener('click', () => {
+        rowsContainer.appendChild(createDataRow());
+        updateCardAverageDisplay(card);
+      });
+      
+      // 平均栏
+      const avgBox = document.createElement('div');
+      avgBox.className = 'card-avg-box';
+      avgBox.innerHTML = `<span class="avg-label">📌 总平均照度</span><div class="avg-value">—<span style="font-size:0.75rem;">lx</span></div>`;
+      
+      card.appendChild(header);
+      card.appendChild(rowsContainer);
+      card.appendChild(addRowBtn);
+      card.appendChild(avgBox);
+      
+      // 删除区段
+      delSectionBtn.addEventListener('click', () => {
+        if (document.querySelectorAll('.project-card').length <= 1) {
+          alert('至少保留一个区段');
+          return;
+        }
+        card.remove();
+        refreshAllAverages();
+      });
+      
+      // 监听已有输入变化
+      card.querySelectorAll('input[type="number"]').forEach(inp => {
+        inp.addEventListener('input', () => updateCardAverageDisplay(card));
+      });
+      
+      updateCardAverageDisplay(card);
+      return card;
+    }
+
+    // ---------- 初始化默认区段 ----------
+    function buildDefaultSections() {
+      container.innerHTML = '';
+      DEFAULT_SECTIONS.forEach(name => container.appendChild(createCard(name)));
+    }
+
+    // 添加新区段
+    function addSection() {
+      let name = prompt('输入新区段名称:', '新区段');
+      if (name === null) return;
+      name = name.trim() || '新区段';
+      container.appendChild(createCard(name));
+    }
+
+    // 清空所有输入（保留结构）
+    function clearAllInputs() {
+      document.querySelectorAll('.project-card input[type="number"]').forEach(i => i.value = '');
+      refreshAllAverages();
+    }
+
+    // 示例数据
+    function fillSampleData() {
+      const cards = document.querySelectorAll('.project-card');
+      cards.forEach(card => {
+        const nameInput = card.querySelector('.section-name-input');
+        const section = nameInput ? nameInput.value : '';
+        let base = 150;
+        if (section.includes('入口')) base = 280;
+        else if (section.includes('过渡')) base = 200;
+        else if (section.includes('中间')) base = 120;
+        else if (section.includes('出口')) base = 260;
+        
+        const rows = card.querySelectorAll('.data-row');
+        rows.forEach((row, rIdx) => {
+          const inputs = row.querySelectorAll('input[type="number"]');
+          inputs.forEach((inp, idx) => {
+            let variation = Math.floor(Math.random() * 40) - 15 + rIdx * 5;
+            let val = Math.min(600, Math.max(10, base + variation + idx * 2));
+            inp.value = val;
+          });
+        });
+      });
+      refreshAllAverages();
+    }
+
+    // 截图
+    async function captureImage() {
+      const btn = document.getElementById('saveImageBtn');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '⏳ 生成中...'; btn.disabled = true;
+      try {
+        const canvas = await html2canvas(captureArea, { scale: 2.2, backgroundColor: '#f5f7fb', logging: false });
+        const tunnel = document.getElementById('tunnelNameInput').value.trim() || '隧道';
+        const ts = new Date().toISOString().slice(0,19).replace(/:/g, '-');
+        const a = document.createElement('a');
+        a.download = `${tunnel}_照度检测_${ts}.png`;
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+      } catch(e) { alert('截图失败'); }
+      btn.innerHTML = orig; btn.disabled = false;
+    }
+
+    // 导出Excel (多行展开)
+    function exportExcel() {
+      const tunnel = document.getElementById('tunnelNameInput').value.trim() || '隧道';
+      const cards = document.querySelectorAll('.project-card');
+      const data = [];
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      data.push([`${tunnel} 隧道照度检测记录`]);
+      data.push([`检测时间: ${dateStr}`]);
+      data.push([]);
+      
+      const header = ['区段', '组别'];
+      for (let i=1; i<=MEASURE_COLS; i++) header.push(`测点${i}`);
+      header.push('组平均(lx)');
+      data.push(header);
+      
+      cards.forEach(card => {
+        const section = card.querySelector('.section-name-input')?.value.trim() || '未命名';
+        const rows = card.querySelectorAll('.data-row');
+        rows.forEach((row, idx) => {
+          const inputs = row.querySelectorAll('input[type="number"]');
+          const rowData = [section, `组${idx+1}`];
+          let sum = 0, cnt = 0;
+          inputs.forEach(inp => {
+            const v = inp.value.trim();
+            rowData.push(v || '');
+            if (v) { const n = parseFloat(v); if (!isNaN(n) && isFinite(n)) { sum += n; cnt++; } }
+          });
+          const avg = cnt > 0 ? (sum/cnt).toFixed(2) : '';
+          rowData.push(avg);
+          data.push(rowData);
+        });
+      });
+      
+      // 总平均
+      let totalSum=0, totalCnt=0;
+      cards.forEach(c => c.querySelectorAll('input[type="number"]').forEach(i => {
+        const v = i.value.trim();
+        if(v) { const n = parseFloat(v); if(!isNaN(n) && isFinite(n)) { totalSum+=n; totalCnt++; } }
+      }));
+      data.push([]);
+      data.push(['全段总平均', '', ...Array(MEASURE_COLS).fill(''), (totalCnt>0?(totalSum/totalCnt).toFixed(2):'')]);
+      
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!cols'] = [{wch:14},{wch:8}, ...Array(MEASURE_COLS).fill({wch:8}), {wch:12}];
+      XLSX.utils.book_append_sheet(wb, ws, '照度数据');
+      XLSX.writeFile(wb, `${tunnel}_照度检测_${dateStr.replace(/:/g,'-')}.xlsx`);
+    }
+
+    // 初始化
+    function init() {
+      buildDefaultSections();
+      document.getElementById('addSectionBtn').addEventListener('click', addSection);
+      document.getElementById('clearAllBtn').addEventListener('click', clearAllInputs);
+      document.getElementById('fillSampleBtn').addEventListener('click', fillSampleData);
+      document.getElementById('saveImageBtn').addEventListener('click', captureImage);
+      document.getElementById('exportExcelBtn').addEventListener('click', exportExcel);
+      document.getElementById('tunnelNameInput').addEventListener('keypress', e => { if(e.key==='Enter') e.target.blur(); });
+    }
+    init();
+  })();
+</script>
+</body>
+</html>
