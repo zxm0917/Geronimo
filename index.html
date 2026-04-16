@@ -21,12 +21,11 @@
     }
     @media (max-width: 480px) { h1 { font-size: 1.2rem; } }
 
-    /* 微信提示条 */
     .wechat-warning {
       background: #fff3cd; color: #856404; border: 1px solid #ffeeba;
       border-radius: 30px; padding: 8px 16px; margin-bottom: 16px;
       text-align: center; font-size: 0.8rem; font-weight: 500;
-      display: none; /* 默认隐藏，微信中显示 */
+      display: none;
     }
     .wechat-warning.show { display: block; }
 
@@ -121,12 +120,16 @@
       padding: 5px 12px; border-radius: 30px; border: 1px solid #c7dae9; background: white; font-size: 0.85rem;
     }
 
-    .avg-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-    .avg-item { display: flex; align-items: center; gap: 6px; }
-    .avg-label { font-weight: 600; color: #1a445b; font-size: 0.85rem; }
+    .avg-row {
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    }
+    .avg-item {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .avg-label { font-weight: 600; color: #1a445b; font-size: 0.8rem; }
     .avg-value {
-      font-weight: 700; font-size: 1.2rem; color: #0c3e5c; background: #f0f4fa;
-      padding: 3px 14px; border-radius: 40px; min-width: 80px; text-align: center;
+      font-weight: 700; font-size: 1.1rem; color: #0c3e5c; background: #f0f4fa;
+      padding: 3px 12px; border-radius: 40px; min-width: 70px; text-align: center;
     }
     .info-icon { margin-left: 2px; font-size: 0.9rem; cursor: help; }
     .tooltip-text {
@@ -179,7 +182,6 @@
   <div id="captureArea">
     <div class="title-wrapper"><h1>高速公路隧道照度检测记录</h1></div>
     
-    <!-- 微信环境提示条（默认隐藏，由JS检测后显示） -->
     <div id="wechatWarning" class="wechat-warning">⚠️ 微信内无法导出文件，请使用手机浏览器打开本页面</div>
 
     <div class="info-rows">
@@ -241,7 +243,6 @@
   (function(){
     "use strict";
 
-    // 检测微信环境并显示提示
     if (/MicroMessenger/i.test(navigator.userAgent)) {
       document.getElementById('wechatWarning').classList.add('show');
     }
@@ -355,23 +356,47 @@
       document.getElementById('measureTimeInput').value = getCurrentDateTimeString();
     }
 
-    function calculateCardAverage(card) {
-      const inputs = card.querySelectorAll('input[type="number"]'); let sum = 0, count = 0;
-      inputs.forEach(inp => { const v = inp.value.trim(); if (!v) return; const n = parseFloat(v); if (isFinite(n)) { sum += n; count++; } });
-      return { avg: count > 0 ? sum / count : null, count };
+    function calculateCardStats(card) {
+      const inputs = card.querySelectorAll('input[type="number"]');
+      let sum = 0, count = 0, min = Infinity;
+      inputs.forEach(inp => {
+        const v = inp.value.trim();
+        if (v === '') return;
+        const num = parseFloat(v);
+        if (isNaN(num) || !isFinite(num)) return;
+        sum += num;
+        count++;
+        if (num < min) min = num;
+      });
+      if (count === 0) {
+        return { avg: null, min: null, count: 0 };
+      }
+      return { avg: sum / count, min: min, count };
     }
 
     function updateCardTotalAverage(card) {
-      const avgSpan = card.querySelector('.avg-value.lux-avg'); const lumSpan = card.querySelector('.avg-value.lum-avg');
+      const avgSpan = card.querySelector('.avg-value.lux-avg');
+      const lumSpan = card.querySelector('.avg-value.lum-avg');
+      const uniSpan = card.querySelector('.avg-value.uni-avg');
       if (!avgSpan) return;
-      const { avg } = calculateCardAverage(card);
+      
+      const { avg, min } = calculateCardStats(card);
       const avgVal = avg?.toFixed(2) || null;
       avgSpan.innerHTML = avgVal ? `${avgVal}<span style="font-size:0.7rem;">lx</span>` : `<span style="opacity:0.6;">—</span>`;
+      
       if (lumSpan) {
         const surface = card.querySelector('.surface-select')?.value;
         const divisor = surface === 'concrete' ? 10 : 15;
         const lum = avgVal ? (avg / divisor).toFixed(2) : null;
         lumSpan.innerHTML = lum ? `${lum}<span style="font-size:0.7rem;">cd/m²</span>` : `<span style="opacity:0.6;">—</span>`;
+      }
+
+      if (uniSpan) {
+        let uniformity = null;
+        if (avg && min !== null && avg > 0) {
+          uniformity = (min / avg).toFixed(2);
+        }
+        uniSpan.innerHTML = uniformity ? `${uniformity}` : `<span style="opacity:0.6;">—</span>`;
       }
     }
 
@@ -422,6 +447,7 @@
       avgRow.innerHTML = `
         <div class="avg-item"><span class="avg-label">总平均照度</span><div class="avg-value lux-avg">—</div></div>
         <div class="avg-item"><span class="avg-label">总平均亮度 <span class="info-icon">ⓘ</span><span class="tooltip-text">沥青:照度/15 &nbsp; 水泥:照度/10</span></span><div class="avg-value lum-avg">—</div></div>
+        <div class="avg-item"><span class="avg-label">均匀度</span><div class="avg-value uni-avg">—</div></div>
       `;
       
       card.appendChild(header); card.appendChild(rowsCont); card.appendChild(addRow);
@@ -476,20 +502,22 @@
       const time = document.getElementById('measureTimeInput').value.trim()||getCurrentDateTimeString();
       const cards = document.querySelectorAll('.project-card');
       const data = [[`${tunnel} 照度检测`],[`测量时间: ${time}  测量人: ${inspector}`],[]];
-      const h = ['区段','路面']; for(let i=1;i<=FIXED_COLS;i++) h.push(`测点${i}`); h.push('总平均(lx)','亮度(cd/m²)'); data.push(h);
+      const h = ['区段','路面']; for(let i=1;i<=FIXED_COLS;i++) h.push(`测点${i}`); h.push('总平均(lx)','亮度(cd/m²)','均匀度'); data.push(h);
       cards.forEach(card => {
         const sec = card.querySelector('.section-name-input')?.value||'未命名';
         const surf = card.querySelector('.surface-select')?.value==='concrete'?'水泥':'沥青';
-        const { avg } = calculateCardAverage(card); const lum = avg ? (avg/(surf==='水泥'?10:15)).toFixed(2) : '';
+        const { avg, min } = calculateCardStats(card);
+        const lum = avg ? (avg/(surf==='水泥'?10:15)).toFixed(2) : '';
+        const uni = (avg && min !== null && avg > 0) ? (min / avg).toFixed(2) : '';
         card.querySelectorAll('.data-row').forEach((row,idx)=>{
           const r = [sec, surf]; const inputs = row.querySelectorAll('input');
           for(let i=0;i<FIXED_COLS;i++) r.push(i<inputs.length ? (inputs[i].value||'') : '');
-          if(idx===0) { r.push(avg?.toFixed(2)||''); r.push(lum); } else { r.push('',''); }
+          if(idx===0) { r.push(avg?.toFixed(2)||''); r.push(lum); r.push(uni); } else { r.push('','',''); }
           data.push(r);
         });
       });
       const wb = XLSX.utils.book_new(); const ws = XLSX.utils.aoa_to_sheet(data);
-      ws['!cols'] = [{wch:14},{wch:10},...Array(FIXED_COLS).fill({wch:8}),{wch:12},{wch:12}];
+      ws['!cols'] = [{wch:14},{wch:10},...Array(FIXED_COLS).fill({wch:8}),{wch:12},{wch:12},{wch:10}];
       XLSX.utils.book_append_sheet(wb, ws, '照度'); 
       const ts = time.replace(/:/g,'-').replace(/\s/g,'_');
       XLSX.writeFile(wb, `${tunnel}_${inspector}_${ts}.xlsx`);
