@@ -242,7 +242,7 @@
     .row-inputs {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 3px;               /* 缩小间距，为输入框腾出更多宽度 */
+      gap: 3px;
       flex: 1;
     }
 
@@ -261,9 +261,9 @@
 
     .input-cell input {
       width: 100%;
-      padding: 6px 0;          /* 左右内边距归零，靠文字居中显示 */
+      padding: 6px 0;
       text-align: center;
-      font-size: 0.7rem;       /* 稍小字体，4位数字可完整展示 */
+      font-size: 0.7rem;
       font-weight: 500;
       border: 1.5px solid #d7e3ef;
       border-radius: 14px;
@@ -331,11 +331,36 @@
       font-size: 0.8rem;
     }
 
+    /* 设计亮度行 */
+    .design-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 8px 0 8px;
+      background: #f9fcff;
+      padding: 6px 12px;
+      border-radius: 40px;
+    }
+    .design-row label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #1e577c;
+    }
+    .design-input {
+      width: 100px;
+      border: 1px solid #c9ddec;
+      border-radius: 40px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      text-align: right;
+      background: white;
+    }
+
     .avg-row {
       display: flex;
       flex-wrap: wrap;
       gap: 16px;
-      align-items: baseline;
+      align-items: center;
       background: #f3f9ff;
       padding: 10px 12px;
       border-radius: 40px;
@@ -364,6 +389,26 @@
       color: #0c4769;
       min-width: 68px;
       text-align: center;
+    }
+
+    .design-status {
+      margin-left: auto;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: 40px;
+      background: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status-pass {
+      color: #1f7b4a;
+      background: #e0f2e5;
+    }
+    .status-fail {
+      color: #b13e3e;
+      background: #ffe6e6;
     }
 
     .info-icon {
@@ -544,7 +589,7 @@
 
   <div class="footer-bar">
     <button class="btn" id="resetDefaultBtn">⟳ 恢复默认数据</button>
-    <span class="author"> 作者 ：Geronimo</span>
+    <span class="author">📐 均匀度 = 最小照度 / 平均照度</span>
   </div>
 </div>
 
@@ -567,7 +612,7 @@
   (function(){
     // ---------- 常量 & 全局 ----------
     const DEFAULT_SECTIONS = ["入口段1", "入口段2", "过渡段1", "过渡段2", "中间段1", "中间段2", "出口段1", "出口段2"];
-    const STORAGE_KEY = 'TunnelLuxPro';
+    const STORAGE_KEY = 'TunnelLuxPro_v2';
     const FIXED_COLS = 7;
 
     let isDirty = false;
@@ -622,13 +667,14 @@
         document.querySelectorAll('.project-card').forEach(card => {
           const sectionName = card.querySelector('.section-name-input')?.value || '区段';
           const surface = card.querySelector('.surface-select')?.value || 'asphalt';
+          const designLum = card.querySelector('.design-input')?.value || '';
           const rowsData = [];
           card.querySelectorAll('.data-row').forEach(row => {
             const rowVals = [];
             row.querySelectorAll('input[type="number"]').forEach(inp => rowVals.push(inp.value));
             rowsData.push(rowVals);
           });
-          state.sections.push({ name: sectionName, surface, rows: rowsData });
+          state.sections.push({ name: sectionName, surface, designLum, rows: rowsData });
         });
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         markClean();
@@ -650,6 +696,8 @@
             container.appendChild(card);
             const surfSelect = card.querySelector('.surface-select');
             if (surfSelect) surfSelect.value = sec.surface === 'concrete' ? 'concrete' : 'asphalt';
+            const designInput = card.querySelector('.design-input');
+            if (designInput) designInput.value = sec.designLum || '';
             const rowsContainer = card.querySelector('.rows-container');
             rowsContainer.innerHTML = '';
             if (sec.rows && sec.rows.length) {
@@ -699,22 +747,40 @@
       const avgSpan = card.querySelector('.lux-avg');
       const lumSpan = card.querySelector('.lum-avg');
       const uniSpan = card.querySelector('.uni-avg');
+      const statusSpan = card.querySelector('.design-status');
       if (!avgSpan) return;
       const { avg, min } = computeCardStats(card);
       const surfaceType = card.querySelector('.surface-select')?.value || 'asphalt';
       const divisor = surfaceType === 'concrete' ? 10 : 15;
       const avgLux = avg !== null ? avg : null;
       avgSpan.innerHTML = avgLux !== null ? `${avgLux.toFixed(2)}<span style="font-size:0.65rem;"> lx</span>` : '<span style="opacity:0.6;">—</span>';
+      
+      let brightness = null;
       if (lumSpan) {
-        const brightness = avgLux !== null ? (avgLux / divisor).toFixed(2) : null;
-        lumSpan.innerHTML = brightness !== null ? `${brightness}<span style="font-size:0.65rem;"> cd/m²</span>` : '<span style="opacity:0.6;">—</span>';
+        brightness = avgLux !== null ? (avgLux / divisor) : null;
+        lumSpan.innerHTML = brightness !== null ? `${brightness.toFixed(2)}<span style="font-size:0.65rem;"> cd/m²</span>` : '<span style="opacity:0.6;">—</span>';
       }
+      
       if (uniSpan) {
         let uniformity = null;
         if (avgLux !== null && min !== null && avgLux > 0) {
           uniformity = (min / avgLux).toFixed(3);
         }
         uniSpan.innerHTML = uniformity !== null ? `${uniformity}` : '<span style="opacity:0.6;">—</span>';
+      }
+      
+      // 处理设计亮度及状态
+      if (statusSpan) {
+        const designInput = card.querySelector('.design-input');
+        const designVal = designInput ? parseFloat(designInput.value) : null;
+        if (brightness !== null && !isNaN(designVal) && designVal > 0) {
+          const isPass = brightness >= designVal;
+          statusSpan.textContent = isPass ? '✅ 亮度合格' : '❌ 亮度不合格';
+          statusSpan.className = `design-status ${isPass ? 'status-pass' : 'status-fail'}`;
+        } else {
+          statusSpan.textContent = '⚪ 未设置设计值';
+          statusSpan.className = 'design-status';
+        }
       }
     }
 
@@ -810,18 +876,34 @@
         updateCardAvg(card); 
       });
 
+      // 设计亮度输入行
+      const designRow = document.createElement('div');
+      designRow.className = 'design-row';
+      designRow.innerHTML = `
+        <label>🎯 设计亮度</label>
+        <input type="number" step="any" class="design-input" placeholder="cd/m²" inputmode="decimal">
+        <span style="font-size:0.7rem; color:#6687a0;">(目标值)</span>
+      `;
+      const designInput = designRow.querySelector('.design-input');
+      designInput.addEventListener('input', () => {
+        markDirty();
+        updateCardAvg(card);
+      });
+
       const avgRow = document.createElement('div');
       avgRow.className = 'avg-row';
       avgRow.innerHTML = `
         <div class="avg-item"><span class="avg-label">📊 平均照度</span><div class="avg-value lux-avg">—</div></div>
         <div class="avg-item"><span class="avg-label">✨ 平均亮度 <span class="info-icon">ⓘ<span class="tooltip-text">沥青÷15，水泥÷10</span></span></span><div class="avg-value lum-avg">—</div></div>
         <div class="avg-item"><span class="avg-label">⚖️ 亮度均匀度U₀</span><div class="avg-value uni-avg">—</div></div>
+        <span class="design-status">⚪ 未设置设计值</span>
       `;
 
       card.appendChild(header);
       card.appendChild(rowsContainer);
       card.appendChild(addRowBtn);
       card.appendChild(surfaceDiv);
+      card.appendChild(designRow);
       card.appendChild(avgRow);
       updateCardAvg(card);
       return card;
@@ -897,36 +979,46 @@
       excelRows.push([`检测时间: ${measureTime}   检测人: ${inspector}`]);
       excelRows.push([]);
       
-      const headers = ['区段名称', '路面类型'];
+      const headers = ['区段名称', '路面类型', '设计亮度(cd/m²)'];
       for (let i = 1; i <= FIXED_COLS; i++) headers.push(`测点${i}`);
-      headers.push('总平均照度(lx)', '平均亮度(cd/m²)', '亮度均匀度U₀');
+      headers.push('总平均照度(lx)', '平均亮度(cd/m²)', '亮度均匀度U₀', '是否合格');
       excelRows.push(headers);
       
       cards.forEach(card => {
         const secName = card.querySelector('.section-name-input')?.value || '—';
         const surfaceType = card.querySelector('.surface-select')?.value === 'concrete' ? '水泥路面' : '沥青路面';
+        const designVal = card.querySelector('.design-input')?.value || '';
         const { avg, min } = computeCardStats(card);
         const avgLuxVal = avg !== null ? avg.toFixed(2) : '';
         const divisor = card.querySelector('.surface-select')?.value === 'concrete' ? 10 : 15;
-        const brightness = avg !== null ? (avg / divisor).toFixed(2) : '';
+        const brightness = avg !== null ? (avg / divisor) : null;
+        const brightnessStr = brightness !== null ? brightness.toFixed(2) : '';
         const uniformity = (avg !== null && min !== null && avg > 0) ? (min / avg).toFixed(4) : '';
+        const designNum = parseFloat(designVal);
+        let passStatus = '';
+        if (brightness !== null && !isNaN(designNum) && designNum > 0) {
+          passStatus = brightness >= designNum ? '合格' : '不合格';
+        } else {
+          passStatus = '未设置';
+        }
+        
         const rowsGroup = card.querySelectorAll('.data-row');
         rowsGroup.forEach((row, idx) => {
-          const rowCells = [secName, surfaceType];
+          const rowCells = [secName, surfaceType, designVal];
           const inputs = row.querySelectorAll('input[type="number"]');
           for (let i = 0; i < FIXED_COLS; i++) {
             rowCells.push(i < inputs.length ? (inputs[i].value || '') : '');
           }
           if (idx === 0) {
-            rowCells.push(avgLuxVal, brightness, uniformity);
+            rowCells.push(avgLuxVal, brightnessStr, uniformity, passStatus);
           } else {
-            rowCells.push('', '', '');
+            rowCells.push('', '', '', '');
           }
           excelRows.push(rowCells);
         });
       });
       const ws = XLSX.utils.aoa_to_sheet(excelRows);
-      ws['!cols'] = [{wch:14},{wch:12}, ...Array(FIXED_COLS).fill({wch:8}), {wch:13},{wch:13},{wch:10}];
+      ws['!cols'] = [{wch:14},{wch:12},{wch:12}, ...Array(FIXED_COLS).fill({wch:8}), {wch:13},{wch:13},{wch:12},{wch:10}];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '照度数据');
       const safeTime = measureTime.replace(/[: ]/g, '-');
