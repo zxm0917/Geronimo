@@ -242,7 +242,7 @@
     .row-inputs {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
+      gap: 3px;               /* 缩小间距，为输入框腾出更多宽度 */
       flex: 1;
     }
 
@@ -253,7 +253,7 @@
     }
 
     .input-cell label {
-      font-size: 0.55rem;
+      font-size: 0.5rem;
       font-weight: 600;
       color: #547c9c;
       margin-bottom: 2px;
@@ -261,15 +261,17 @@
 
     .input-cell input {
       width: 100%;
-      padding: 8px 2px;
+      padding: 6px 0;          /* 左右内边距归零，靠文字居中显示 */
       text-align: center;
-      font-size: 0.8rem;
+      font-size: 0.7rem;       /* 稍小字体，4位数字可完整展示 */
       font-weight: 500;
       border: 1.5px solid #d7e3ef;
-      border-radius: 16px;
+      border-radius: 14px;
       background: white;
       outline: none;
       transition: 0.1s;
+      box-sizing: border-box;
+      min-width: 0;
     }
 
     .input-cell input:focus {
@@ -286,6 +288,7 @@
       font-size: 1rem;
       cursor: pointer;
       color: #8aa3b9;
+      flex-shrink: 0;
     }
 
     .add-row-btn {
@@ -541,7 +544,7 @@
 
   <div class="footer-bar">
     <button class="btn" id="resetDefaultBtn">⟳ 恢复默认数据</button>
-    <span class="author"> 作者：Geronimo</span>
+    <span class="author"> 作者 ：Geronimo</span>
   </div>
 </div>
 
@@ -579,7 +582,6 @@
     const backupTimeSpan = document.getElementById('backupTime');
     const backupIconSpan = document.getElementById('backupIcon');
 
-    // 工具函数
     function showMessage(msg, duration = 1600) {
       toastEl.textContent = msg;
       toastEl.style.opacity = '1';
@@ -609,7 +611,6 @@
 
     function markClean() { isDirty = false; }
 
-    // 持久化存储
     function saveToLocal() {
       try {
         const state = {
@@ -771,9 +772,7 @@
       delSec.className = 'delete-section-btn';
       delSec.innerHTML = '🗑️';
       delSec.addEventListener('click', () => {
-        // ★ 新增确认对话框
         if (!confirm('确定要删除这个区段吗？')) return;
-        
         if (document.querySelectorAll('.project-card').length <= 1) {
           showMessage('至少保留一个区段', 1000);
           return;
@@ -799,7 +798,6 @@
         updateCardAvg(card);
       });
 
-      // ★ 路面材质仅显示“沥青路面”和“水泥路面”（去除括号说明，tooltip保留换算提示）
       const surfaceDiv = document.createElement('div');
       surfaceDiv.className = 'surface-selector';
       surfaceDiv.innerHTML = `<label>🛞 路面材质</label>
@@ -812,7 +810,6 @@
         updateCardAvg(card); 
       });
 
-      // ★ 均匀度标签改为“亮度均匀度U₀”
       const avgRow = document.createElement('div');
       avgRow.className = 'avg-row';
       avgRow.innerHTML = `
@@ -900,7 +897,6 @@
       excelRows.push([`检测时间: ${measureTime}   检测人: ${inspector}`]);
       excelRows.push([]);
       
-      // ★ 表头也改为“亮度均匀度U₀”
       const headers = ['区段名称', '路面类型'];
       for (let i = 1; i <= FIXED_COLS; i++) headers.push(`测点${i}`);
       headers.push('总平均照度(lx)', '平均亮度(cd/m²)', '亮度均匀度U₀');
