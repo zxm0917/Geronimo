@@ -3,204 +3,526 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes, viewport-fit=cover">
-  <title>高速公路隧道 · 照度检测</title>
+  <title>高速公路隧道 · 照度检测系统</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      background: #f5f7fb; font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
-      padding: 16px 12px 32px; color: #1e2b3c; min-height: 100vh;
+      background: #eef2f7;
+      font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      padding: 16px 12px 40px;
+      color: #1e2f3c;
+      min-height: 100vh;
       -webkit-tap-highlight-color: transparent;
     }
-    .container { max-width: 600px; margin: 0 auto; }
 
-    .title-wrapper { text-align: center; margin-bottom: 8px; }
-    h1 {
-      font-weight: 500; font-size: 1.4rem; color: #1e3b5c; margin: 0;
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
     }
-    @media (max-width: 480px) { h1 { font-size: 1.2rem; } }
+
+    .title-wrapper {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-weight: 600;
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, #1e4b6e, #0f2c40);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      letter-spacing: -0.3px;
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 1.25rem; }
+    }
 
     .wechat-warning {
-      background: #fff3cd; color: #856404; border: 1px solid #ffeeba;
-      border-radius: 30px; padding: 8px 16px; margin-bottom: 16px;
-      text-align: center; font-size: 0.8rem; font-weight: 500;
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+      border-radius: 40px;
+      padding: 8px 14px;
+      margin-bottom: 16px;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 500;
       display: none;
     }
-    .wechat-warning.show { display: block; }
+
+    .wechat-warning.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
 
     .info-rows {
-      background: #eef3f8; border-radius: 24px; padding: 12px 16px;
-      margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px;
+      background: white;
+      border-radius: 28px;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02), 0 0 0 1px rgba(0, 0, 0, 0.02);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
+
     .info-row {
-      display: flex; align-items: center; gap: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
+
     .info-row label {
-      font-size: 0.9rem; color: #2c4b66; font-weight: 500; min-width: 56px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #2c5a7a;
+      min-width: 58px;
     }
+
     .info-input {
-      border: none; background: white; border-radius: 30px; padding: 8px 16px;
-      font-size: 0.9rem; width: auto; min-width: 140px; max-width: 100%;
-      outline: none; border: 1px solid #c7dae9; display: inline-block;
+      flex: 1;
+      border: 1px solid #cfdfed;
+      background: #ffffff;
+      border-radius: 40px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
     }
-    .info-input.time-input { min-width: 180px; }
+
+    .info-input:focus {
+      border-color: #2c7cb6;
+      box-shadow: 0 0 0 2px rgba(44, 124, 182, 0.1);
+    }
 
     .hint-row {
-      display: flex; justify-content: center; margin-bottom: 12px;
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 8px;
     }
+
     .hint-text {
-      font-size: 0.75rem; color: #6b8da3; background: #eef3f8;
-      padding: 4px 14px; border-radius: 30px; display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.7rem;
+      background: #e9f0f6;
+      padding: 4px 12px;
+      border-radius: 30px;
+      color: #2c6b8f;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
 
-    .toolbar { display: flex; gap: 6px; flex-wrap: wrap; }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .btn {
-      background: white; border: 1px solid #b6c9db; padding: 10px 14px; border-radius: 40px;
-      font-size: 0.9rem; font-weight: 500; color: #1e3b5c; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.95);
-      touch-action: manipulation; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      background: white;
+      border: 1px solid #cbdde9;
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #1e4b6e;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      touch-action: manipulation;
     }
-    .btn:active { background: #d4e0ec; transform: scale(0.97); }
-    .btn.capture { background: #2e5f4b; border-color: #1d4536; color: white; }
-    .btn.excel { background: #1f6e43; border-color: #165a35; color: white; }
-    .btn.new-tunnel { background: #1e3b5c; border-color: #0f2638; color: white; }
 
-    .projects-grid { display: flex; flex-direction: column; gap: 18px; margin: 16px 0 10px; }
+    .btn:active {
+      transform: scale(0.96);
+      background: #e3edf5;
+    }
+
+    .btn.capture {
+      background: #2a6b4e;
+      border-color: #1d533c;
+      color: white;
+    }
+
+    .btn.excel {
+      background: #1f7b4a;
+      border-color: #15633b;
+      color: white;
+    }
+
+    .btn.new-tunnel {
+      background: #1f4e6e;
+      border-color: #0e3850;
+      color: white;
+    }
+
+    .projects-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin: 16px 0 12px;
+    }
 
     .project-card {
-      background: white; border-radius: 20px; padding: 16px 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2eaf2;
-    }
-    .card-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 12px;
-    }
-    .section-name-input {
-      font-weight: 700; font-size: 1.2rem; color: #103247; background: transparent;
-      border: none; border-bottom: 2px dotted #a0bbcf; padding: 4px 0; width: 140px; outline: none;
-    }
-    .delete-section-btn {
-      background: none; border: none; width: 38px; height: 38px; border-radius: 40px;
-      font-size: 1.3rem; cursor: pointer; color: #9babbc; display: flex; align-items: center; justify-content: center;
+      background: white;
+      border-radius: 28px;
+      padding: 18px 14px;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2edf5;
+      transition: all 0.2s;
     }
 
-    .rows-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .section-name-input {
+      font-weight: 700;
+      font-size: 1.2rem;
+      background: transparent;
+      border: none;
+      border-bottom: 2px dashed #b9d0e3;
+      padding: 4px 0;
+      width: 150px;
+      outline: none;
+      color: #103247;
+    }
+
+    .delete-section-btn {
+      background: #f2f6fa;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 40px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #8da3b7;
+      transition: 0.2s;
+    }
+
+    .delete-section-btn:active {
+      background: #e0eaf2;
+      color: #b91c1c;
+    }
+
+    .rows-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
     .data-row {
-      display: flex; align-items: center; gap: 5px; background: #fafcff; padding: 5px 6px;
-      border-radius: 16px; border: 1px solid #e2eaf2;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #fbfdff;
+      padding: 6px 4px;
+      border-radius: 20px;
+      border: 1px solid #e5eff7;
     }
+
     .row-inputs {
-      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; flex: 1;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      flex: 1;
     }
-    .input-cell { display: flex; flex-direction: column; align-items: center; }
-    .input-cell label { font-size: 0.6rem; color: #2c4b66; margin-bottom: 2px; }
+
+    .input-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .input-cell label {
+      font-size: 0.55rem;
+      font-weight: 600;
+      color: #547c9c;
+      margin-bottom: 2px;
+    }
+
     .input-cell input {
-      width: 100%; padding: 6px 2px; text-align: center; font-size: 0.8rem;
-      border: 1.5px solid #d7e1e9; border-radius: 12px; background: white; outline: none;
+      width: 100%;
+      padding: 8px 2px;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border: 1.5px solid #d7e3ef;
+      border-radius: 16px;
+      background: white;
+      outline: none;
+      transition: 0.1s;
     }
-    .input-cell input:focus { border-color: #2f6c9f; box-shadow: 0 0 0 2px rgba(47,108,159,0.1); }
-    .input-cell input::placeholder { opacity: 0; }
-    
+
+    .input-cell input:focus {
+      border-color: #2c7cb6;
+      box-shadow: 0 0 0 2px rgba(44, 124, 182, 0.2);
+    }
+
     .row-delete-btn {
-      background: none; border: none; width: 36px; height: 36px; border-radius: 40px;
-      font-size: 1.1rem; cursor: pointer; color: #a0b5c7; display: flex; align-items: center; justify-content: center;
+      background: #f3f7fc;
+      border: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      color: #8aa3b9;
     }
 
     .add-row-btn {
-      background: #eef3f8; border: 1px dashed #7f9eb5; border-radius: 30px; padding: 8px;
-      font-size: 0.85rem; color: #1e3b5c; cursor: pointer; text-align: center; margin: 4px 0 8px;
+      background: #f2f8fe;
+      border: 1px dashed #8eb3cc;
+      border-radius: 40px;
+      padding: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #2c6f94;
+      text-align: center;
+      margin: 6px 0 10px;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+
+    .add-row-btn:active {
+      background: #e2eff9;
     }
 
     .surface-selector {
-      display: flex; align-items: center; gap: 8px; margin: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 10px 0 8px;
+      padding-top: 4px;
     }
-    .surface-selector label { font-size: 0.85rem; color: #1a445b; font-weight: 600; }
-    .surface-selector select {
-      padding: 5px 12px; border-radius: 30px; border: 1px solid #c7dae9; background: white; font-size: 0.85rem;
+
+    .surface-selector label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #1e577c;
+    }
+
+    .surface-select {
+      background: white;
+      border: 1px solid #c9ddec;
+      border-radius: 40px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
     }
 
     .avg-row {
-      display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: baseline;
+      background: #f3f9ff;
+      padding: 10px 12px;
+      border-radius: 40px;
+      margin-top: 10px;
     }
+
     .avg-item {
-      display: flex; align-items: center; gap: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: white;
+      padding: 4px 12px;
+      border-radius: 50px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
-    .avg-label { font-weight: 600; color: #1a445b; font-size: 0.8rem; }
+
+    .avg-label {
+      font-weight: 600;
+      font-size: 0.75rem;
+      color: #1b577b;
+    }
+
     .avg-value {
-      font-weight: 700; font-size: 1.1rem; color: #0c3e5c; background: #f0f4fa;
-      padding: 3px 12px; border-radius: 40px; min-width: 70px; text-align: center;
+      font-weight: 800;
+      font-size: 1rem;
+      color: #0c4769;
+      min-width: 68px;
+      text-align: center;
     }
-    .info-icon { margin-left: 2px; font-size: 0.9rem; cursor: help; }
+
+    .info-icon {
+      font-size: 0.75rem;
+      cursor: help;
+      background: #d9e6f2;
+      border-radius: 50%;
+      display: inline-flex;
+      width: 16px;
+      height: 16px;
+      align-items: center;
+      justify-content: center;
+      margin-left: 3px;
+      position: relative;
+    }
+
     .tooltip-text {
-      visibility: hidden; background: #1e3b5c; color: white; padding: 4px 10px; border-radius: 30px;
-      position: absolute; font-size: 0.65rem; white-space: nowrap; z-index: 10;
+      visibility: hidden;
+      background: #1e3b5c;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 24px;
+      position: absolute;
+      font-size: 0.65rem;
+      white-space: nowrap;
+      z-index: 200;
+      bottom: 150%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.1s;
+      pointer-events: none;
     }
-    .info-icon:hover + .tooltip-text { visibility: visible; }
+
+    .info-icon:hover .tooltip-text,
+    .info-icon:active .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
 
     .action-bar {
-      display: flex; justify-content: space-between; margin: 10px 0 5px; flex-wrap: wrap;
-      gap: 8px; align-items: center;
+      display: flex;
+      justify-content: space-between;
+      margin: 12px 0 10px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
+
     .footer-bar {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-top: 16px; padding-top: 12px; border-top: 1px solid #d0dde9;
-      font-size: 0.8rem; color: #6b8da3;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 1px solid #cfe0ed;
+      font-size: 0.7rem;
+      color: #6c8eaa;
     }
-    .author { font-style: italic; }
 
     .toast-message {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      background: #1e3b5c; color: white; padding: 8px 20px; border-radius: 60px;
-      font-size: 0.85rem; z-index: 2000; opacity: 0; transition: opacity 0.2s;
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a3448;
+      color: white;
+      padding: 10px 24px;
+      border-radius: 60px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      z-index: 2100;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     }
 
     .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
-      display: flex; align-items: center; justify-content: center; z-index: 1000;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
     }
+
     .modal-box {
-      background: white; border-radius: 24px; padding: 20px 16px; max-width: 300px; width: 90%;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center;
+      background: white;
+      border-radius: 32px;
+      padding: 24px 20px;
+      max-width: 320px;
+      width: 85%;
+      text-align: center;
+      box-shadow: 0 25px 40px rgba(0, 0, 0, 0.2);
     }
-    .modal-box h3 { font-size: 1.2rem; margin-bottom: 14px; }
-    .modal-buttons { display: flex; flex-direction: column; gap: 8px; }
+
+    .modal-box h3 {
+      font-size: 1.3rem;
+      margin-bottom: 18px;
+      color: #1f4868;
+    }
+
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
     .modal-btn {
-      background: #f0f4fa; border: none; border-radius: 60px; padding: 12px;
-      font-size: 0.95rem; font-weight: 500; color: #1e3b5c; cursor: pointer;
+      background: #f0f6fd;
+      border: none;
+      border-radius: 60px;
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #1f5375;
+      cursor: pointer;
     }
-    .modal-btn.primary { background: #2e5f4b; color: white; }
-    .modal-btn.excel { background: #1f6e43; color: white; }
-    .modal-btn.all { background: #1e3b5c; color: white; }
-    .modal-btn.skip { background: #b0c4de; color: #1e3b5c; }
-    .modal-hint { font-size: 0.7rem; margin-top: 10px; color: #8a9db0; }
+
+    .modal-btn.excel { background: #1f7b4a; color: white; }
+    .modal-btn.primary { background: #2a6b4e; color: white; }
+    .modal-btn.all { background: #1f4e6e; color: white; }
+    .modal-btn.skip { background: #cbdde9; color: #1e3b4e; }
+
+    .modal-hint {
+      font-size: 0.65rem;
+      margin-top: 14px;
+      color: #7b99b3;
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <div id="captureArea">
-    <div class="title-wrapper"><h1>高速公路隧道照度检测记录</h1></div>
-    
-    <div id="wechatWarning" class="wechat-warning">⚠️ 微信内无法导出文件，请使用手机浏览器打开本页面</div>
+    <div class="title-wrapper">
+      <h1>🛣️ 隧道照度检测记录</h1>
+    </div>
+
+    <div id="wechatWarning" class="wechat-warning">⚠️ 微信内无法直接下载文件，请使用系统浏览器打开</div>
 
     <div class="info-rows">
       <div class="info-row">
-        <label>🛣️ 隧道</label>
-        <input type="text" id="tunnelNameInput" class="info-input" value="连城山隧道" placeholder="隧道名称" autocomplete="off">
+        <label>🚇 隧道名称</label>
+        <input type="text" id="tunnelNameInput" class="info-input" value="连城山隧道" placeholder="例: 秦岭隧道">
       </div>
       <div class="info-row">
-        <label>📅 时间</label>
-        <input type="text" id="measureTimeInput" class="info-input time-input" placeholder="测量时间" autocomplete="off">
+        <label>📅 检测时间</label>
+        <input type="text" id="measureTimeInput" class="info-input" placeholder="2025-06-15 14:30">
       </div>
       <div class="info-row">
-        <label>🧑‍🔧 测量人</label>
-        <input type="text" id="inspectorNameInput" class="info-input" value="张工" placeholder="姓名" autocomplete="off">
+        <label>🧑‍🔧 检测人员</label>
+        <input type="text" id="inspectorNameInput" class="info-input" value="张工" placeholder="姓名">
       </div>
     </div>
-    
+
     <div class="hint-row">
-      <span class="hint-text" id="backupIndicator"><span id="backupIcon">💾</span> 已备份 <span id="backupTime">--:--:--</span></span>
+      <span class="hint-text"><span id="backupIcon">💾</span> 自动保存 · 上次备份 <span id="backupTime">--:--:--</span></span>
     </div>
 
     <div id="projectsContainer" class="projects-grid"></div>
@@ -209,88 +531,86 @@
   <div class="action-bar">
     <div class="toolbar">
       <button class="btn" id="addSectionBtn">➕ 添加区段</button>
-      <button class="btn new-tunnel" id="newTunnelBtn">📋 新增隧道</button>
+      <button class="btn new-tunnel" id="newTunnelBtn">📋 新建隧道</button>
     </div>
     <div class="toolbar">
-      <button class="btn excel" id="exportExcelBtn">📊 保存为Excel</button>
+      <button class="btn excel" id="exportExcelBtn">📎 导出Excel</button>
       <button class="btn capture" id="saveImageBtn">📸 保存为图片</button>
     </div>
   </div>
 
   <div class="footer-bar">
-    <button class="btn" id="resetDefaultBtn">🔄 恢复默认</button>
-    <span class="author">作者：Geronimo</span>
+    <button class="btn" id="resetDefaultBtn">⟳ 恢复默认数据</button>
+    <span class="author"> 作者：Geronimo</span>
   </div>
-
-  <div id="toast" class="toast-message"></div>
 </div>
 
+<div id="toast" class="toast-message"></div>
 <div id="saveModal" class="modal-overlay" style="display: none;">
   <div class="modal-box">
-    <h3>💾 保存当前记录</h3>
+    <h3>💡 保存当前隧道数据？</h3>
     <div class="modal-buttons">
-      <button class="modal-btn excel" id="modalExcelBtn">📊 保存为 Excel</button>
-      <button class="modal-btn primary" id="modalImageBtn">📸 保存为图片</button>
-      <button class="modal-btn all" id="modalAllBtn">📦 全部保存</button>
-      <button class="modal-btn skip" id="modalSkipBtn">🚀 无需保存，直接开始</button>
+      <button class="modal-btn excel" id="modalExcelBtn">📊 导出 Excel 并清空</button>
+      <button class="modal-btn primary" id="modalImageBtn">🖼️ 导出图片 并清空</button>
+      <button class="modal-btn all" id="modalAllBtn">📦 导出 Excel+图片 并清空</button>
+      <button class="modal-btn skip" id="modalSkipBtn">🚀 直接新建隧道 (不保存)</button>
       <button class="modal-btn" id="modalCancelBtn">取消</button>
     </div>
-    <div class="modal-hint">点击空白处可关闭</div>
+    <div class="modal-hint">数据会先保存再开始全新隧道记录</div>
   </div>
 </div>
 
 <script>
   (function(){
-    "use strict";
-
-    if (/MicroMessenger/i.test(navigator.userAgent)) {
-      document.getElementById('wechatWarning').classList.add('show');
-    }
-
-    const DEFAULT_SECTIONS = ["入口1", "入口2", "过渡1", "过渡2", "中间1", "中间2", "出口1", "出口2"];
-    const STORAGE_KEY = 'tunnelLuxDraft';
+    // ---------- 常量 & 全局 ----------
+    const DEFAULT_SECTIONS = ["入口段1", "入口段2", "过渡段1", "过渡段2", "中间段1", "中间段2", "出口段1", "出口段2"];
+    const STORAGE_KEY = 'TunnelLuxPro';
     const FIXED_COLS = 7;
+
+    let isDirty = false;
+    let ignoreBeforeUnload = false;
+    let autoTimer = null;
+    let modalActive = false;
 
     const container = document.getElementById('projectsContainer');
     const captureArea = document.getElementById('captureArea');
-    const backupIndicator = document.getElementById('backupIndicator');
-    const backupIcon = document.getElementById('backupIcon');
+    const toastEl = document.getElementById('toast');
+    const modalOverlay = document.getElementById('saveModal');
     const backupTimeSpan = document.getElementById('backupTime');
-    const toast = document.getElementById('toast');
-    const modal = document.getElementById('saveModal');
+    const backupIconSpan = document.getElementById('backupIcon');
 
-    let isDirty = false, _ignoreBeforeUnload = false, autoSaveTimer = null;
-    
-    function showToast(msg, duration=1500) {
-      toast.textContent = msg; toast.style.opacity = '1';
-      setTimeout(() => toast.style.opacity = '0', duration);
+    // 工具函数
+    function showMessage(msg, duration = 1600) {
+      toastEl.textContent = msg;
+      toastEl.style.opacity = '1';
+      setTimeout(() => toastEl.style.opacity = '0', duration);
     }
 
-    function markDirty() { isDirty = true; scheduleAutoSave(); }
-    function markClean() { isDirty = false; }
-    
-    function getTimeString() {
+    function getNowTimeStr() {
       const d = new Date();
       return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
     }
-    
-    function scheduleAutoSave() {
-      if (autoSaveTimer) clearTimeout(autoSaveTimer);
-      autoSaveTimer = setTimeout(() => {
-        saveToLocalStorage();
-        backupTimeSpan.textContent = getTimeString();
-        backupIcon.textContent = '✅'; 
-        backupIndicator.style.background = '#2e5f4b'; 
-        backupIndicator.style.color = 'white';
-        setTimeout(() => { 
-          backupIcon.textContent = '💾'; 
-          backupIndicator.style.background = ''; 
-          backupIndicator.style.color = ''; 
-        }, 1200);
-      }, 1500);
+
+    function getCurrentDateForInput() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     }
 
-    function saveToLocalStorage() {
+    function markDirty() {
+      if (!isDirty) isDirty = true;
+      if (autoTimer) clearTimeout(autoTimer);
+      autoTimer = setTimeout(() => {
+        saveToLocal();
+        backupTimeSpan.textContent = getNowTimeStr();
+        backupIconSpan.textContent = '✅';
+        setTimeout(() => { if (backupIconSpan) backupIconSpan.textContent = '💾'; }, 1500);
+      }, 1200);
+    }
+
+    function markClean() { isDirty = false; }
+
+    // 持久化存储
+    function saveToLocal() {
       try {
         const state = {
           tunnelName: document.getElementById('tunnelNameInput').value,
@@ -299,281 +619,399 @@
           sections: []
         };
         document.querySelectorAll('.project-card').forEach(card => {
-          const sectionName = card.querySelector('.section-name-input')?.value || '';
+          const sectionName = card.querySelector('.section-name-input')?.value || '区段';
           const surface = card.querySelector('.surface-select')?.value || 'asphalt';
-          const rows = [];
+          const rowsData = [];
           card.querySelectorAll('.data-row').forEach(row => {
-            const vals = []; row.querySelectorAll('input[type="number"]').forEach(inp => vals.push(inp.value));
-            rows.push(vals);
+            const rowVals = [];
+            row.querySelectorAll('input[type="number"]').forEach(inp => rowVals.push(inp.value));
+            rowsData.push(rowVals);
           });
-          state.sections.push({ name: sectionName, surface, rows });
+          state.sections.push({ name: sectionName, surface, rows: rowsData });
         });
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch(e) {}
+        markClean();
+      } catch(e) { console.warn(e); }
     }
 
-    function restoreFromLocalStorage() {
+    function restoreFromLocal() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
       try {
-        const saved = localStorage.getItem(STORAGE_KEY); if (!saved) return false;
-        const state = JSON.parse(saved);
+        const state = JSON.parse(raw);
         document.getElementById('tunnelNameInput').value = state.tunnelName || '连城山隧道';
-        document.getElementById('measureTimeInput').value = state.measureTime || getCurrentDateTimeString();
+        document.getElementById('measureTimeInput').value = state.measureTime || getCurrentDateForInput();
         document.getElementById('inspectorNameInput').value = state.inspector || '张工';
         container.innerHTML = '';
-        state.sections.forEach(sec => {
-          const card = createCard(sec.name);
-          container.appendChild(card);
-          card.querySelector('.surface-select').value = sec.surface || 'asphalt';
-          const rowsContainer = card.querySelector('.rows-container');
-          rowsContainer.innerHTML = '';
-          sec.rows.forEach(rowData => {
-            const row = createDataRow();
-            const inputs = row.querySelectorAll('input[type="number"]');
-            rowData.forEach((val, idx) => { if (inputs[idx]) inputs[idx].value = val; });
-            rowsContainer.appendChild(row);
+        if (state.sections && state.sections.length) {
+          state.sections.forEach(sec => {
+            const card = buildCard(sec.name);
+            container.appendChild(card);
+            const surfSelect = card.querySelector('.surface-select');
+            if (surfSelect) surfSelect.value = sec.surface === 'concrete' ? 'concrete' : 'asphalt';
+            const rowsContainer = card.querySelector('.rows-container');
+            rowsContainer.innerHTML = '';
+            if (sec.rows && sec.rows.length) {
+              sec.rows.forEach(rowArr => {
+                const newRow = createDataRow();
+                const inputs = newRow.querySelectorAll('input[type="number"]');
+                rowArr.forEach((val, idx) => { if (inputs[idx]) inputs[idx].value = val; });
+                rowsContainer.appendChild(newRow);
+              });
+            }
+            if (rowsContainer.children.length === 0) rowsContainer.appendChild(createDataRow());
+            updateCardAvg(card);
           });
-          if (rowsContainer.children.length === 0) rowsContainer.appendChild(createDataRow());
-          updateCardTotalAverage(card);
-        });
-        markClean(); 
+        } else {
+          buildDefaultCards();
+        }
+        markClean();
+        showMessage('已恢复上次编辑内容');
         backupTimeSpan.textContent = '已恢复';
-        showToast('已恢复上次编辑');
         return true;
       } catch(e) { return false; }
     }
 
-    setInterval(() => { if (isDirty) saveToLocalStorage(); }, 20000);
-    window.addEventListener('beforeunload', (e) => {
-      saveToLocalStorage();
-      if (isDirty && !_ignoreBeforeUnload) { e.preventDefault(); e.returnValue = ''; }
-    });
-    
-    function getCurrentDateTimeString() {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    }
-    if (!document.getElementById('measureTimeInput').value) {
-      document.getElementById('measureTimeInput').value = getCurrentDateTimeString();
+    function buildDefaultCards() {
+      container.innerHTML = '';
+      DEFAULT_SECTIONS.forEach(name => container.appendChild(buildCard(name)));
     }
 
-    function calculateCardStats(card) {
-      const inputs = card.querySelectorAll('input[type="number"]');
-      let sum = 0, count = 0, min = Infinity;
-      inputs.forEach(inp => {
+    function computeCardStats(card) {
+      let sum = 0, count = 0, minVal = Infinity;
+      const allInputs = card.querySelectorAll('.data-row input[type="number"]');
+      allInputs.forEach(inp => {
         const v = inp.value.trim();
         if (v === '') return;
         const num = parseFloat(v);
-        if (isNaN(num) || !isFinite(num)) return;
-        sum += num;
-        count++;
-        if (num < min) min = num;
+        if (!isNaN(num) && isFinite(num)) {
+          sum += num;
+          count++;
+          if (num < minVal) minVal = num;
+        }
       });
-      if (count === 0) {
-        return { avg: null, min: null, count: 0 };
-      }
-      return { avg: sum / count, min: min, count };
+      if (count === 0) return { avg: null, min: null, count: 0 };
+      return { avg: sum / count, min: minVal, count };
     }
 
-    function updateCardTotalAverage(card) {
-      const avgSpan = card.querySelector('.avg-value.lux-avg');
-      const lumSpan = card.querySelector('.avg-value.lum-avg');
-      const uniSpan = card.querySelector('.avg-value.uni-avg');
+    function updateCardAvg(card) {
+      const avgSpan = card.querySelector('.lux-avg');
+      const lumSpan = card.querySelector('.lum-avg');
+      const uniSpan = card.querySelector('.uni-avg');
       if (!avgSpan) return;
-      
-      const { avg, min } = calculateCardStats(card);
-      const avgVal = avg?.toFixed(2) || null;
-      avgSpan.innerHTML = avgVal ? `${avgVal}<span style="font-size:0.7rem;">lx</span>` : `<span style="opacity:0.6;">—</span>`;
-      
+      const { avg, min } = computeCardStats(card);
+      const surfaceType = card.querySelector('.surface-select')?.value || 'asphalt';
+      const divisor = surfaceType === 'concrete' ? 10 : 15;
+      const avgLux = avg !== null ? avg : null;
+      avgSpan.innerHTML = avgLux !== null ? `${avgLux.toFixed(2)}<span style="font-size:0.65rem;"> lx</span>` : '<span style="opacity:0.6;">—</span>';
       if (lumSpan) {
-        const surface = card.querySelector('.surface-select')?.value;
-        const divisor = surface === 'concrete' ? 10 : 15;
-        const lum = avgVal ? (avg / divisor).toFixed(2) : null;
-        lumSpan.innerHTML = lum ? `${lum}<span style="font-size:0.7rem;">cd/m²</span>` : `<span style="opacity:0.6;">—</span>`;
+        const brightness = avgLux !== null ? (avgLux / divisor).toFixed(2) : null;
+        lumSpan.innerHTML = brightness !== null ? `${brightness}<span style="font-size:0.65rem;"> cd/m²</span>` : '<span style="opacity:0.6;">—</span>';
       }
-
       if (uniSpan) {
         let uniformity = null;
-        if (avg && min !== null && avg > 0) {
-          uniformity = (min / avg).toFixed(2);
+        if (avgLux !== null && min !== null && avgLux > 0) {
+          uniformity = (min / avgLux).toFixed(3);
         }
-        uniSpan.innerHTML = uniformity ? `${uniformity}` : `<span style="opacity:0.6;">—</span>`;
+        uniSpan.innerHTML = uniformity !== null ? `${uniformity}` : '<span style="opacity:0.6;">—</span>';
       }
     }
 
     function createDataRow() {
-      const row = document.createElement('div'); row.className = 'data-row';
-      const wrap = document.createElement('div'); wrap.className = 'row-inputs';
-      
-      for (let i=1; i<=FIXED_COLS; i++) {
-        const cell = document.createElement('div'); cell.className = 'input-cell';
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'data-row';
+      const inputsWrap = document.createElement('div');
+      inputsWrap.className = 'row-inputs';
+      for (let i = 1; i <= FIXED_COLS; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'input-cell';
         cell.innerHTML = `<label>点${i}</label>`;
-        const inp = document.createElement('input'); 
-        inp.type = 'number'; inp.step = 'any'; inp.min = '0'; inp.inputMode = 'decimal';
-        inp.placeholder = '';
-        inp.addEventListener('input', () => { markDirty(); const c = inp.closest('.project-card'); if (c) updateCardTotalAverage(c); });
-        cell.appendChild(inp); wrap.appendChild(cell);
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.step = 'any';
+        inp.inputMode = 'decimal';
+        inp.addEventListener('input', () => {
+          markDirty();
+          const parentCard = rowDiv.closest('.project-card');
+          if (parentCard) updateCardAvg(parentCard);
+        });
+        cell.appendChild(inp);
+        inputsWrap.appendChild(cell);
       }
-      const del = document.createElement('button'); del.className = 'row-delete-btn'; del.innerHTML = '✕';
-      del.addEventListener('click', (e) => {
-        e.stopPropagation(); const rowsCont = row.closest('.rows-container');
-        if (rowsCont.children.length <= 1) { alert('至少保留一组'); return; }
-        row.remove(); markDirty(); updateCardTotalAverage(row.closest('.project-card'));
+      const delBtn = document.createElement('button');
+      delBtn.className = 'row-delete-btn';
+      delBtn.innerHTML = '✕';
+      delBtn.addEventListener('click', () => {
+        const rowsContainer = rowDiv.closest('.rows-container');
+        if (rowsContainer.children.length <= 1) {
+          showMessage('至少保留一组测点数据', 1000);
+          return;
+        }
+        rowDiv.remove();
+        markDirty();
+        const card = rowDiv.closest('.project-card');
+        if (card) updateCardAvg(card);
       });
-      row.appendChild(wrap); row.appendChild(del);
-      return row;
+      rowDiv.appendChild(inputsWrap);
+      rowDiv.appendChild(delBtn);
+      return rowDiv;
     }
 
-    function createCard(name) {
-      const card = document.createElement('div'); card.className = 'project-card';
-      const header = document.createElement('div'); header.className = 'card-header';
-      const nameInp = document.createElement('input'); nameInp.className = 'section-name-input'; nameInp.value = name; nameInp.placeholder = '区段名';
-      nameInp.addEventListener('input', markDirty);
+    function buildCard(sectionName = '新区段') {
+      const card = document.createElement('div');
+      card.className = 'project-card';
+      const header = document.createElement('div');
+      header.className = 'card-header';
+      const nameInput = document.createElement('input');
+      nameInput.className = 'section-name-input';
+      nameInput.value = sectionName;
+      nameInput.addEventListener('input', markDirty);
       
-      const delSec = document.createElement('button'); delSec.className = 'delete-section-btn'; delSec.innerHTML = '✕';
-      delSec.addEventListener('click', () => { if (document.querySelectorAll('.project-card').length<=1) { alert('至少保留一个'); return; } card.remove(); markDirty(); });
-      header.appendChild(nameInp); header.appendChild(delSec);
+      const delSec = document.createElement('button');
+      delSec.className = 'delete-section-btn';
+      delSec.innerHTML = '🗑️';
+      delSec.addEventListener('click', () => {
+        // ★ 新增确认对话框
+        if (!confirm('确定要删除这个区段吗？')) return;
+        
+        if (document.querySelectorAll('.project-card').length <= 1) {
+          showMessage('至少保留一个区段', 1000);
+          return;
+        }
+        card.remove();
+        markDirty();
+        showMessage(`区段已删除`, 800);
+      });
       
-      const rowsCont = document.createElement('div'); rowsCont.className = 'rows-container';
-      rowsCont.appendChild(createDataRow());
-      
-      const addRow = document.createElement('div'); addRow.className = 'add-row-btn'; addRow.textContent = '➕ 添加一组数据';
-      addRow.addEventListener('click', () => { rowsCont.appendChild(createDataRow()); markDirty(); updateCardTotalAverage(card); });
-      
-      const surfDiv = document.createElement('div'); surfDiv.className = 'surface-selector';
-      surfDiv.innerHTML = `<label>路面类型</label><select class="surface-select"><option value="asphalt">沥青路面</option><option value="concrete">水泥路面</option></select>`;
-      surfDiv.querySelector('select').addEventListener('change', () => { markDirty(); updateCardTotalAverage(card); });
-      
-      const avgRow = document.createElement('div'); avgRow.className = 'avg-row';
+      header.appendChild(nameInput);
+      header.appendChild(delSec);
+
+      const rowsContainer = document.createElement('div');
+      rowsContainer.className = 'rows-container';
+      rowsContainer.appendChild(createDataRow());
+
+      const addRowBtn = document.createElement('div');
+      addRowBtn.className = 'add-row-btn';
+      addRowBtn.innerHTML = '+ 增加一组测点 (7点/组)';
+      addRowBtn.addEventListener('click', () => {
+        rowsContainer.appendChild(createDataRow());
+        markDirty();
+        updateCardAvg(card);
+      });
+
+      // ★ 路面材质仅显示“沥青路面”和“水泥路面”（去除括号说明，tooltip保留换算提示）
+      const surfaceDiv = document.createElement('div');
+      surfaceDiv.className = 'surface-selector';
+      surfaceDiv.innerHTML = `<label>🛞 路面材质</label>
+        <select class="surface-select">
+          <option value="asphalt">沥青路面</option>
+          <option value="concrete">水泥路面</option>
+        </select>`;
+      surfaceDiv.querySelector('select').addEventListener('change', () => { 
+        markDirty(); 
+        updateCardAvg(card); 
+      });
+
+      // ★ 均匀度标签改为“亮度均匀度U₀”
+      const avgRow = document.createElement('div');
+      avgRow.className = 'avg-row';
       avgRow.innerHTML = `
-        <div class="avg-item"><span class="avg-label">总平均照度</span><div class="avg-value lux-avg">—</div></div>
-        <div class="avg-item"><span class="avg-label">总平均亮度 <span class="info-icon">ⓘ</span><span class="tooltip-text">沥青:照度/15 &nbsp; 水泥:照度/10</span></span><div class="avg-value lum-avg">—</div></div>
-        <div class="avg-item"><span class="avg-label">均匀度</span><div class="avg-value uni-avg">—</div></div>
+        <div class="avg-item"><span class="avg-label">📊 平均照度</span><div class="avg-value lux-avg">—</div></div>
+        <div class="avg-item"><span class="avg-label">✨ 平均亮度 <span class="info-icon">ⓘ<span class="tooltip-text">沥青÷15，水泥÷10</span></span></span><div class="avg-value lum-avg">—</div></div>
+        <div class="avg-item"><span class="avg-label">⚖️ 亮度均匀度U₀</span><div class="avg-value uni-avg">—</div></div>
       `;
-      
-      card.appendChild(header); card.appendChild(rowsCont); card.appendChild(addRow);
-      card.appendChild(surfDiv); card.appendChild(avgRow);
-      updateCardTotalAverage(card); return card;
+
+      card.appendChild(header);
+      card.appendChild(rowsContainer);
+      card.appendChild(addRowBtn);
+      card.appendChild(surfaceDiv);
+      card.appendChild(avgRow);
+      updateCardAvg(card);
+      return card;
     }
 
-    function resetToDefault() {
+    function resetToFullDefault() {
       document.getElementById('tunnelNameInput').value = '连城山隧道';
-      document.getElementById('measureTimeInput').value = getCurrentDateTimeString();
+      document.getElementById('measureTimeInput').value = getCurrentDateForInput();
       document.getElementById('inspectorNameInput').value = '张工';
-      container.innerHTML = '';
-      DEFAULT_SECTIONS.forEach(n => container.appendChild(createCard(n)));
+      buildDefaultCards();
       markClean();
-      saveToLocalStorage();
-      backupTimeSpan.textContent = '已重置';
-      showToast('已恢复默认设置');
+      saveToLocal();
+      backupTimeSpan.textContent = getNowTimeStr();
+      showMessage('已恢复默认模板');
     }
 
-    function buildDefault() { container.innerHTML = ''; DEFAULT_SECTIONS.forEach(n => container.appendChild(createCard(n))); markClean(); }
-    
-    function resetNew(showToastMsg = true) {
+    function newTunnelClean() {
       document.getElementById('tunnelNameInput').value = '新隧道';
-      document.getElementById('measureTimeInput').value = getCurrentDateTimeString();
-      container.innerHTML = '';
-      DEFAULT_SECTIONS.forEach(n => container.appendChild(createCard(n)));
+      document.getElementById('measureTimeInput').value = getCurrentDateForInput();
+      buildDefaultCards();
       markClean();
-      saveToLocalStorage();
-      backupTimeSpan.textContent = getTimeString();
-      if (showToastMsg) showToast('已创建新隧道');
+      saveToLocal();
+      backupTimeSpan.textContent = getNowTimeStr();
     }
 
-    function addSection() { let n = prompt('新区段名称:', '新区段'); if (n) container.appendChild(createCard(n.trim()||'新区段')); markDirty(); }
-
-    async function captureImage() {
-      const btn = document.getElementById('saveImageBtn'); btn.disabled = true; btn.innerHTML = '⏳';
-      return new Promise(resolve => { _ignoreBeforeUnload = true;
-        html2canvas(captureArea, { scale:2.2, backgroundColor:'#f5f7fb' }).then(canvas => {
-          const tunnel = document.getElementById('tunnelNameInput').value.trim()||'隧道';
-          const inspector = document.getElementById('inspectorNameInput').value.trim()||'未填写';
-          const ts = new Date().toISOString().slice(0,19).replace(/:/g,'-');
-          const a = document.createElement('a'); a.download = `${tunnel}_${inspector}_${ts}.png`; a.href = canvas.toDataURL(); a.click();
-          btn.disabled = false; btn.innerHTML = '📸 保存为图片'; _ignoreBeforeUnload = false; resolve();
-        }).catch(()=>{ btn.disabled = false; btn.innerHTML = '📸 保存为图片'; _ignoreBeforeUnload = false; });
-      });
+    function addSection() {
+      const newName = prompt('请输入区段名称', '检测段');
+      if (newName && newName.trim()) {
+        container.appendChild(buildCard(newName.trim()));
+        markDirty();
+        showMessage(`已添加「${newName.trim()}」`);
+      }
     }
 
-    function exportExcel() {
-      _ignoreBeforeUnload = true;
-      const tunnel = document.getElementById('tunnelNameInput').value.trim()||'未命名';
-      const inspector = document.getElementById('inspectorNameInput').value.trim()||'未填写';
-      const time = document.getElementById('measureTimeInput').value.trim()||getCurrentDateTimeString();
+    async function exportAsImage() {
+      const btnImg = document.getElementById('saveImageBtn');
+      btnImg.disabled = true;
+      btnImg.innerHTML = '⏳ 生成中...';
+      ignoreBeforeUnload = true;
+      try {
+        const canvas = await html2canvas(captureArea, {
+          scale: 2.2,
+          backgroundColor: '#f5f9fe',
+          logging: false,
+          useCORS: false
+        });
+        const tunnel = document.getElementById('tunnelNameInput').value.trim() || '隧道';
+        const inspector = document.getElementById('inspectorNameInput').value.trim() || '检测员';
+        const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
+        const link = document.createElement('a');
+        link.download = `${tunnel}_${inspector}_${timestamp}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+        showMessage('图片已保存');
+      } catch (err) {
+        showMessage('截图失败，请重试');
+        console.error(err);
+      } finally {
+        btnImg.disabled = false;
+        btnImg.innerHTML = '📸 保存为图片';
+        ignoreBeforeUnload = false;
+      }
+    }
+
+    function exportToExcel() {
+      ignoreBeforeUnload = true;
+      const tunnel = document.getElementById('tunnelNameInput').value.trim() || '未命名隧道';
+      const inspector = document.getElementById('inspectorNameInput').value.trim() || '未填写';
+      const measureTime = document.getElementById('measureTimeInput').value.trim() || getCurrentDateForInput();
       const cards = document.querySelectorAll('.project-card');
-      const data = [[`${tunnel} 照度检测`],[`测量时间: ${time}  测量人: ${inspector}`],[]];
-      const h = ['区段','路面']; for(let i=1;i<=FIXED_COLS;i++) h.push(`测点${i}`); h.push('总平均(lx)','亮度(cd/m²)','均匀度'); data.push(h);
+      const excelRows = [];
+      excelRows.push([`${tunnel} 照度检测报告`]);
+      excelRows.push([`检测时间: ${measureTime}   检测人: ${inspector}`]);
+      excelRows.push([]);
+      
+      // ★ 表头也改为“亮度均匀度U₀”
+      const headers = ['区段名称', '路面类型'];
+      for (let i = 1; i <= FIXED_COLS; i++) headers.push(`测点${i}`);
+      headers.push('总平均照度(lx)', '平均亮度(cd/m²)', '亮度均匀度U₀');
+      excelRows.push(headers);
+      
       cards.forEach(card => {
-        const sec = card.querySelector('.section-name-input')?.value||'未命名';
-        const surf = card.querySelector('.surface-select')?.value==='concrete'?'水泥':'沥青';
-        const { avg, min } = calculateCardStats(card);
-        const lum = avg ? (avg/(surf==='水泥'?10:15)).toFixed(2) : '';
-        const uni = (avg && min !== null && avg > 0) ? (min / avg).toFixed(2) : '';
-        card.querySelectorAll('.data-row').forEach((row,idx)=>{
-          const r = [sec, surf]; const inputs = row.querySelectorAll('input');
-          for(let i=0;i<FIXED_COLS;i++) r.push(i<inputs.length ? (inputs[i].value||'') : '');
-          if(idx===0) { r.push(avg?.toFixed(2)||''); r.push(lum); r.push(uni); } else { r.push('','',''); }
-          data.push(r);
+        const secName = card.querySelector('.section-name-input')?.value || '—';
+        const surfaceType = card.querySelector('.surface-select')?.value === 'concrete' ? '水泥路面' : '沥青路面';
+        const { avg, min } = computeCardStats(card);
+        const avgLuxVal = avg !== null ? avg.toFixed(2) : '';
+        const divisor = card.querySelector('.surface-select')?.value === 'concrete' ? 10 : 15;
+        const brightness = avg !== null ? (avg / divisor).toFixed(2) : '';
+        const uniformity = (avg !== null && min !== null && avg > 0) ? (min / avg).toFixed(4) : '';
+        const rowsGroup = card.querySelectorAll('.data-row');
+        rowsGroup.forEach((row, idx) => {
+          const rowCells = [secName, surfaceType];
+          const inputs = row.querySelectorAll('input[type="number"]');
+          for (let i = 0; i < FIXED_COLS; i++) {
+            rowCells.push(i < inputs.length ? (inputs[i].value || '') : '');
+          }
+          if (idx === 0) {
+            rowCells.push(avgLuxVal, brightness, uniformity);
+          } else {
+            rowCells.push('', '', '');
+          }
+          excelRows.push(rowCells);
         });
       });
-      const wb = XLSX.utils.book_new(); const ws = XLSX.utils.aoa_to_sheet(data);
-      ws['!cols'] = [{wch:14},{wch:10},...Array(FIXED_COLS).fill({wch:8}),{wch:12},{wch:12},{wch:10}];
-      XLSX.utils.book_append_sheet(wb, ws, '照度'); 
-      const ts = time.replace(/:/g,'-').replace(/\s/g,'_');
-      XLSX.writeFile(wb, `${tunnel}_${inspector}_${ts}.xlsx`);
-      _ignoreBeforeUnload = false;
+      const ws = XLSX.utils.aoa_to_sheet(excelRows);
+      ws['!cols'] = [{wch:14},{wch:12}, ...Array(FIXED_COLS).fill({wch:8}), {wch:13},{wch:13},{wch:10}];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '照度数据');
+      const safeTime = measureTime.replace(/[: ]/g, '-');
+      XLSX.writeFile(wb, `${tunnel}_${inspector}_${safeTime}.xlsx`);
+      ignoreBeforeUnload = false;
+      showMessage('Excel 导出成功');
     }
 
-    function showModal() { modal.style.display = 'flex'; }
-    function hideModal() { modal.style.display = 'none'; }
-    
-    async function handleNew() {
-      showModal();
-      const excel = document.getElementById('modalExcelBtn');
-      const img = document.getElementById('modalImageBtn');
-      const all = document.getElementById('modalAllBtn');
-      const skip = document.getElementById('modalSkipBtn');
-      const cancel = document.getElementById('modalCancelBtn');
+    function showSaveModal() {
+      if (modalActive) return;
+      modalActive = true;
+      modalOverlay.style.display = 'flex';
+      const excelBtn = document.getElementById('modalExcelBtn');
+      const imgBtn = document.getElementById('modalImageBtn');
+      const allBtn = document.getElementById('modalAllBtn');
+      const skipBtn = document.getElementById('modalSkipBtn');
+      const cancelBtn = document.getElementById('modalCancelBtn');
       
-      const cleanup = () => {
-        excel.replaceWith(excel.cloneNode(true));
-        img.replaceWith(img.cloneNode(true));
-        all.replaceWith(all.cloneNode(true));
-        skip.replaceWith(skip.cloneNode(true));
-        cancel.replaceWith(cancel.cloneNode(true));
+      const closeModal = () => {
+        modalOverlay.style.display = 'none';
+        modalActive = false;
+      };
+      const newHandler = (fn) => {
+        closeModal();
+        fn();
+        newTunnelClean();
+      };
+      const newWithSave = async (action) => {
+        closeModal();
+        await action();
+        newTunnelClean();
       };
       
-      document.getElementById('modalExcelBtn').addEventListener('click', () => { hideModal(); cleanup(); exportExcel(); resetNew(); });
-      document.getElementById('modalImageBtn').addEventListener('click', async () => { hideModal(); cleanup(); await captureImage(); resetNew(); });
-      document.getElementById('modalAllBtn').addEventListener('click', async () => { hideModal(); cleanup(); exportExcel(); await captureImage(); resetNew(); });
-      document.getElementById('modalSkipBtn').addEventListener('click', () => { hideModal(); cleanup(); resetNew(true); });
-      document.getElementById('modalCancelBtn').addEventListener('click', () => { hideModal(); cleanup(); });
+      const clickExcel = () => newHandler(exportToExcel);
+      const clickImg = () => newWithSave(exportAsImage);
+      const clickAll = () => newWithSave(async () => { exportToExcel(); await exportAsImage(); });
+      const clickSkip = () => { closeModal(); newTunnelClean(); };
+      const clickCancel = () => closeModal();
       
-      modal.addEventListener('click', (e) => { if(e.target === modal) { hideModal(); cleanup(); } });
+      excelBtn.replaceWith(excelBtn.cloneNode(true));
+      imgBtn.replaceWith(imgBtn.cloneNode(true));
+      allBtn.replaceWith(allBtn.cloneNode(true));
+      skipBtn.replaceWith(skipBtn.cloneNode(true));
+      cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+      
+      document.getElementById('modalExcelBtn').addEventListener('click', clickExcel);
+      document.getElementById('modalImageBtn').addEventListener('click', clickImg);
+      document.getElementById('modalAllBtn').addEventListener('click', clickAll);
+      document.getElementById('modalSkipBtn').addEventListener('click', clickSkip);
+      document.getElementById('modalCancelBtn').addEventListener('click', clickCancel);
+      
+      modalOverlay.onclick = (e) => { if (e.target === modalOverlay) closeModal(); };
     }
 
+    setInterval(() => { if (isDirty) saveToLocal(); }, 25000);
+    window.addEventListener('beforeunload', (e) => {
+      if (isDirty && !ignoreBeforeUnload) {
+        saveToLocal();
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
+    document.getElementById('addSectionBtn').addEventListener('click', addSection);
+    document.getElementById('resetDefaultBtn').addEventListener('click', () => {
+      if (confirm('恢复默认将会清除当前所有未保存的修改，确定吗？')) resetToFullDefault();
+    });
+    document.getElementById('saveImageBtn').addEventListener('click', exportAsImage);
+    document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+    document.getElementById('newTunnelBtn').addEventListener('click', showSaveModal);
     document.getElementById('tunnelNameInput').addEventListener('input', markDirty);
     document.getElementById('measureTimeInput').addEventListener('input', markDirty);
     document.getElementById('inspectorNameInput').addEventListener('input', markDirty);
 
-    function init() {
-      const restored = restoreFromLocalStorage();
-      if (!restored) {
-        buildDefault();
-        backupTimeSpan.textContent = getTimeString();
-      }
-      document.getElementById('addSectionBtn').addEventListener('click', addSection);
-      document.getElementById('resetDefaultBtn').addEventListener('click', () => {
-        if(confirm('确定恢复默认设置吗？当前所有数据将被重置。')) {
-          resetToDefault();
-        }
-      });
-      document.getElementById('saveImageBtn').addEventListener('click', captureImage);
-      document.getElementById('exportExcelBtn').addEventListener('click', exportExcel);
-      document.getElementById('newTunnelBtn').addEventListener('click', handleNew);
+    if (!restoreFromLocal()) {
+      buildDefaultCards();
+      backupTimeSpan.textContent = getNowTimeStr();
     }
-    init();
-    if ('serviceWorker' in navigator) window.addEventListener('load', ()=>{ navigator.serviceWorker.register('data:application/javascript,self.addEventListener("fetch",e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))})').catch(console.warn); });
+    if (/MicroMessenger/i.test(navigator.userAgent)) {
+      document.getElementById('wechatWarning').classList.add('show');
+    }
   })();
 </script>
 </body>
