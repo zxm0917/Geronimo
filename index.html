@@ -91,7 +91,6 @@
       border: 1.5px solid #d7e1e9; border-radius: 12px; background: white; outline: none;
     }
     .input-cell input:focus { border-color: #2f6c9f; box-shadow: 0 0 0 2px rgba(47,108,159,0.1); }
-    /* 移除数字占位符 */
     .input-cell input::placeholder { opacity: 0; }
     
     .row-delete-btn {
@@ -130,7 +129,6 @@
       display: flex; justify-content: space-between; margin: 10px 0 5px; flex-wrap: wrap;
       gap: 8px; align-items: center;
     }
-    /* 底部信息栏 */
     .footer-bar {
       display: flex; justify-content: space-between; align-items: center;
       margin-top: 16px; padding-top: 12px; border-top: 1px solid #d0dde9;
@@ -180,7 +178,6 @@
     <div id="projectsContainer" class="projects-grid"></div>
   </div>
 
-  <!-- 顶部操作栏（不含清空） -->
   <div class="action-bar">
     <div class="toolbar">
       <button class="btn" id="addSectionBtn">➕ 添加区段</button>
@@ -192,9 +189,8 @@
     </div>
   </div>
 
-  <!-- 底部栏：清空按钮 + 作者信息 -->
   <div class="footer-bar">
-    <button class="btn" id="clearAllBtn">🧹 清空数据</button>
+    <button class="btn" id="resetDefaultBtn">🔄 恢复默认</button>
     <span class="author">作者：Geronimo</span>
   </div>
 
@@ -340,7 +336,6 @@
         cell.innerHTML = `<label>点${i}</label>`;
         const inp = document.createElement('input'); 
         inp.type = 'number'; inp.step = 'any'; inp.min = '0'; inp.inputMode = 'decimal';
-        // 移除placeholder中的数字
         inp.placeholder = '';
         inp.addEventListener('input', () => { markDirty(); const c = inp.closest('.project-card'); if (c) updateCardTotalAverage(c); });
         cell.appendChild(inp); wrap.appendChild(cell);
@@ -386,6 +381,18 @@
       updateCardTotalAverage(card); return card;
     }
 
+    // 重置为默认初始状态
+    function resetToDefault() {
+      document.getElementById('tunnelNameInput').value = '连城山隧道';
+      document.getElementById('measureTimeInput').value = getCurrentDateTimeString();
+      document.getElementById('inspectorNameInput').value = '张工';
+      container.innerHTML = '';
+      DEFAULT_SECTIONS.forEach(n => container.appendChild(createCard(n)));
+      markClean();
+      saveToLocalStorage();
+      showToast('已恢复默认设置');
+    }
+
     function buildDefault() { container.innerHTML = ''; DEFAULT_SECTIONS.forEach(n => container.appendChild(createCard(n))); markClean(); }
     function resetNew() {
       document.getElementById('tunnelNameInput').value = '新隧道';
@@ -393,7 +400,6 @@
       buildDefault(); saveToLocalStorage();
     }
     function addSection() { let n = prompt('新区段名称:', '新区段'); if (n) container.appendChild(createCard(n.trim()||'新区段')); markDirty(); }
-    function clearAll() { if(!confirm('清空所有测点数据？')) return; document.querySelectorAll('.project-card input[type="number"]').forEach(i=>i.value=''); document.querySelectorAll('.project-card').forEach(c=>updateCardTotalAverage(c)); markClean(); }
 
     async function captureImage() {
       const btn = document.getElementById('saveImageBtn'); btn.disabled = true; btn.innerHTML = '⏳';
@@ -454,7 +460,11 @@
     function init() {
       if(!restoreFromLocalStorage()) buildDefault();
       document.getElementById('addSectionBtn').addEventListener('click', addSection);
-      document.getElementById('clearAllBtn').addEventListener('click', clearAll);
+      document.getElementById('resetDefaultBtn').addEventListener('click', () => {
+        if(confirm('确定恢复默认设置吗？当前所有数据将被重置。')) {
+          resetToDefault();
+        }
+      });
       document.getElementById('saveImageBtn').addEventListener('click', captureImage);
       document.getElementById('exportExcelBtn').addEventListener('click', exportExcel);
       document.getElementById('newTunnelBtn').addEventListener('click', handleNew);
