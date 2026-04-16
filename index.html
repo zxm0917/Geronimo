@@ -15,34 +15,35 @@
     }
     .container { max-width: 600px; margin: 0 auto; }
 
-    .title-wrapper { text-align: center; margin-bottom: 12px; }
+    .title-wrapper { text-align: center; margin-bottom: 16px; }
     h1 {
       font-weight: 500; font-size: 1.4rem; color: #1e3b5c; margin: 0;
     }
     @media (max-width: 480px) { h1 { font-size: 1.2rem; } }
 
-    .subhead {
-      color: #4a627a; margin-bottom: 16px; padding-bottom: 8px;
-      border-bottom: 2px solid #d0dde9; display: flex; justify-content: space-between;
-      align-items: center; flex-wrap: wrap; gap: 10px;
+    .info-rows {
+      background: #eef3f8; border-radius: 24px; padding: 12px 16px;
+      margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px;
     }
-    .info-bar {
-      display: flex; align-items: center; gap: 8px; background: #eef3f8;
-      padding: 6px 14px; border-radius: 40px; flex-wrap: wrap;
+    .info-row {
+      display: flex; align-items: center; gap: 8px;
     }
-    .info-item { display: flex; align-items: center; gap: 4px; }
-    .info-item label {
-      font-size: 0.8rem; color: #2c4b66; font-weight: 500; white-space: nowrap;
-      min-width: 48px; text-align: right;
+    .info-row label {
+      font-size: 0.9rem; color: #2c4b66; font-weight: 500; min-width: 56px;
     }
     .info-input {
-      border: none; background: white; border-radius: 30px; padding: 6px 12px;
-      font-size: 0.85rem; width: 120px; outline: none; border: 1px solid #c7dae9;
+      border: none; background: white; border-radius: 30px; padding: 8px 16px;
+      font-size: 0.9rem; width: auto; min-width: 140px; max-width: 100%;
+      outline: none; border: 1px solid #c7dae9; display: inline-block;
     }
-    .info-input.time-input { width: 150px; }
+    .info-input.time-input { min-width: 180px; }
 
+    .hint-row {
+      display: flex; justify-content: center; margin-bottom: 12px;
+    }
     .hint-text {
-      font-size: 0.7rem; color: #6b8da3; background: #eef3f8; padding: 4px 10px; border-radius: 30px;
+      font-size: 0.75rem; color: #6b8da3; background: #eef3f8;
+      padding: 4px 14px; border-radius: 30px; display: inline-flex; align-items: center; gap: 4px;
     }
 
     .toolbar { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -160,6 +161,7 @@
     .modal-btn.primary { background: #2e5f4b; color: white; }
     .modal-btn.excel { background: #1f6e43; color: white; }
     .modal-btn.all { background: #1e3b5c; color: white; }
+    .modal-btn.skip { background: #b0c4de; color: #1e3b5c; }
     .modal-hint { font-size: 0.7rem; margin-top: 10px; color: #8a9db0; }
   </style>
 </head>
@@ -167,14 +169,26 @@
 <div class="container">
   <div id="captureArea">
     <div class="title-wrapper"><h1>高速公路隧道照度检测记录</h1></div>
-    <div class="subhead">
-      <div class="info-bar">
-        <div class="info-item"><label>🛣️ 隧道</label><input type="text" id="tunnelNameInput" class="info-input" value="连城山隧道"></div>
-        <div class="info-item"><label>📅 时间</label><input type="text" id="measureTimeInput" class="info-input time-input"></div>
-        <div class="info-item"><label>🧑‍🔧 测量人</label><input type="text" id="inspectorNameInput" class="info-input" value="张工"></div>
+    
+    <div class="info-rows">
+      <div class="info-row">
+        <label>🛣️ 隧道</label>
+        <input type="text" id="tunnelNameInput" class="info-input" value="连城山隧道" placeholder="隧道名称" autocomplete="off">
       </div>
-      <span class="hint-text" id="backupIndicator"><span id="backupIcon">💾</span> 已备份</span>
+      <div class="info-row">
+        <label>📅 时间</label>
+        <input type="text" id="measureTimeInput" class="info-input time-input" placeholder="测量时间" autocomplete="off">
+      </div>
+      <div class="info-row">
+        <label>🧑‍🔧 测量人</label>
+        <input type="text" id="inspectorNameInput" class="info-input" value="张工" placeholder="姓名" autocomplete="off">
+      </div>
     </div>
+    
+    <div class="hint-row">
+      <span class="hint-text" id="backupIndicator"><span id="backupIcon">💾</span> 已备份 <span id="backupTime">--:--:--</span></span>
+    </div>
+
     <div id="projectsContainer" class="projects-grid"></div>
   </div>
 
@@ -204,6 +218,7 @@
       <button class="modal-btn excel" id="modalExcelBtn">📊 保存为 Excel</button>
       <button class="modal-btn primary" id="modalImageBtn">📸 保存为图片</button>
       <button class="modal-btn all" id="modalAllBtn">📦 全部保存</button>
+      <button class="modal-btn skip" id="modalSkipBtn">🚀 无需保存，直接开始</button>
       <button class="modal-btn" id="modalCancelBtn">取消</button>
     </div>
     <div class="modal-hint">点击空白处可关闭</div>
@@ -221,6 +236,7 @@
     const captureArea = document.getElementById('captureArea');
     const backupIndicator = document.getElementById('backupIndicator');
     const backupIcon = document.getElementById('backupIcon');
+    const backupTimeSpan = document.getElementById('backupTime');
     const toast = document.getElementById('toast');
     const modal = document.getElementById('saveModal');
 
@@ -234,12 +250,24 @@
     function markDirty() { isDirty = true; scheduleAutoSave(); }
     function markClean() { isDirty = false; }
     
+    function getTimeString() {
+      const d = new Date();
+      return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+    }
+    
     function scheduleAutoSave() {
       if (autoSaveTimer) clearTimeout(autoSaveTimer);
       autoSaveTimer = setTimeout(() => {
         saveToLocalStorage();
-        backupIcon.textContent = '✅'; backupIndicator.style.background = '#2e5f4b'; backupIndicator.style.color = 'white';
-        setTimeout(() => { backupIcon.textContent = '💾'; backupIndicator.style.background = ''; backupIndicator.style.color = ''; }, 1200);
+        backupTimeSpan.textContent = getTimeString();
+        backupIcon.textContent = '✅'; 
+        backupIndicator.style.background = '#2e5f4b'; 
+        backupIndicator.style.color = 'white';
+        setTimeout(() => { 
+          backupIcon.textContent = '💾'; 
+          backupIndicator.style.background = ''; 
+          backupIndicator.style.color = ''; 
+        }, 1200);
       }, 1500);
     }
 
@@ -288,7 +316,9 @@
           if (rowsContainer.children.length === 0) rowsContainer.appendChild(createDataRow());
           updateCardTotalAverage(card);
         });
-        markClean(); showToast('已恢复上次编辑');
+        markClean(); 
+        backupTimeSpan.textContent = '已恢复';
+        showToast('已恢复上次编辑');
         return true;
       } catch(e) { return false; }
     }
@@ -381,7 +411,6 @@
       updateCardTotalAverage(card); return card;
     }
 
-    // 重置为默认初始状态
     function resetToDefault() {
       document.getElementById('tunnelNameInput').value = '连城山隧道';
       document.getElementById('measureTimeInput').value = getCurrentDateTimeString();
@@ -390,15 +419,24 @@
       DEFAULT_SECTIONS.forEach(n => container.appendChild(createCard(n)));
       markClean();
       saveToLocalStorage();
+      backupTimeSpan.textContent = '已重置';
       showToast('已恢复默认设置');
     }
 
     function buildDefault() { container.innerHTML = ''; DEFAULT_SECTIONS.forEach(n => container.appendChild(createCard(n))); markClean(); }
-    function resetNew() {
+    
+    function resetNew(showToastMsg = true) {
       document.getElementById('tunnelNameInput').value = '新隧道';
       document.getElementById('measureTimeInput').value = getCurrentDateTimeString();
-      buildDefault(); saveToLocalStorage();
+      // 测量人保留原值，不清空
+      container.innerHTML = '';
+      DEFAULT_SECTIONS.forEach(n => container.appendChild(createCard(n)));
+      markClean();
+      saveToLocalStorage();
+      backupTimeSpan.textContent = getTimeString();
+      if (showToastMsg) showToast('已创建新隧道');
     }
+
     function addSection() { let n = prompt('新区段名称:', '新区段'); if (n) container.appendChild(createCard(n.trim()||'新区段')); markDirty(); }
 
     async function captureImage() {
@@ -443,14 +481,30 @@
 
     function showModal() { modal.style.display = 'flex'; }
     function hideModal() { modal.style.display = 'none'; }
+    
     async function handleNew() {
-      showModal(); const excel=document.getElementById('modalExcelBtn'), img=document.getElementById('modalImageBtn'), all=document.getElementById('modalAllBtn'), cancel=document.getElementById('modalCancelBtn');
-      const cleanup = () => { excel.replaceWith(excel.cloneNode(true)); img.replaceWith(img.cloneNode(true)); all.replaceWith(all.cloneNode(true)); cancel.replaceWith(cancel.cloneNode(true)); };
-      document.getElementById('modalExcelBtn').addEventListener('click', ()=>{ hideModal(); cleanup(); exportExcel(); resetNew(); });
-      document.getElementById('modalImageBtn').addEventListener('click', async ()=>{ hideModal(); cleanup(); await captureImage(); resetNew(); });
-      document.getElementById('modalAllBtn').addEventListener('click', async ()=>{ hideModal(); cleanup(); exportExcel(); await captureImage(); resetNew(); });
-      document.getElementById('modalCancelBtn').addEventListener('click', ()=>{ hideModal(); cleanup(); });
-      modal.addEventListener('click', (e) => { if(e.target===modal) { hideModal(); cleanup(); } });
+      showModal();
+      const excel = document.getElementById('modalExcelBtn');
+      const img = document.getElementById('modalImageBtn');
+      const all = document.getElementById('modalAllBtn');
+      const skip = document.getElementById('modalSkipBtn');
+      const cancel = document.getElementById('modalCancelBtn');
+      
+      const cleanup = () => {
+        excel.replaceWith(excel.cloneNode(true));
+        img.replaceWith(img.cloneNode(true));
+        all.replaceWith(all.cloneNode(true));
+        skip.replaceWith(skip.cloneNode(true));
+        cancel.replaceWith(cancel.cloneNode(true));
+      };
+      
+      document.getElementById('modalExcelBtn').addEventListener('click', () => { hideModal(); cleanup(); exportExcel(); resetNew(); });
+      document.getElementById('modalImageBtn').addEventListener('click', async () => { hideModal(); cleanup(); await captureImage(); resetNew(); });
+      document.getElementById('modalAllBtn').addEventListener('click', async () => { hideModal(); cleanup(); exportExcel(); await captureImage(); resetNew(); });
+      document.getElementById('modalSkipBtn').addEventListener('click', () => { hideModal(); cleanup(); resetNew(true); });
+      document.getElementById('modalCancelBtn').addEventListener('click', () => { hideModal(); cleanup(); });
+      
+      modal.addEventListener('click', (e) => { if(e.target === modal) { hideModal(); cleanup(); } });
     }
 
     document.getElementById('tunnelNameInput').addEventListener('input', markDirty);
@@ -458,7 +512,11 @@
     document.getElementById('inspectorNameInput').addEventListener('input', markDirty);
 
     function init() {
-      if(!restoreFromLocalStorage()) buildDefault();
+      const restored = restoreFromLocalStorage();
+      if (!restored) {
+        buildDefault();
+        backupTimeSpan.textContent = getTimeString();
+      }
       document.getElementById('addSectionBtn').addEventListener('click', addSection);
       document.getElementById('resetDefaultBtn').addEventListener('click', () => {
         if(confirm('确定恢复默认设置吗？当前所有数据将被重置。')) {
