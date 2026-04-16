@@ -15,11 +15,20 @@
     }
     .container { max-width: 600px; margin: 0 auto; }
 
-    .title-wrapper { text-align: center; margin-bottom: 16px; }
+    .title-wrapper { text-align: center; margin-bottom: 8px; }
     h1 {
       font-weight: 500; font-size: 1.4rem; color: #1e3b5c; margin: 0;
     }
     @media (max-width: 480px) { h1 { font-size: 1.2rem; } }
+
+    /* 微信提示条 */
+    .wechat-warning {
+      background: #fff3cd; color: #856404; border: 1px solid #ffeeba;
+      border-radius: 30px; padding: 8px 16px; margin-bottom: 16px;
+      text-align: center; font-size: 0.8rem; font-weight: 500;
+      display: none; /* 默认隐藏，微信中显示 */
+    }
+    .wechat-warning.show { display: block; }
 
     .info-rows {
       background: #eef3f8; border-radius: 24px; padding: 12px 16px;
@@ -170,6 +179,9 @@
   <div id="captureArea">
     <div class="title-wrapper"><h1>高速公路隧道照度检测记录</h1></div>
     
+    <!-- 微信环境提示条（默认隐藏，由JS检测后显示） -->
+    <div id="wechatWarning" class="wechat-warning">⚠️ 微信内无法导出文件，请使用手机浏览器打开本页面</div>
+
     <div class="info-rows">
       <div class="info-row">
         <label>🛣️ 隧道</label>
@@ -228,6 +240,12 @@
 <script>
   (function(){
     "use strict";
+
+    // 检测微信环境并显示提示
+    if (/MicroMessenger/i.test(navigator.userAgent)) {
+      document.getElementById('wechatWarning').classList.add('show');
+    }
+
     const DEFAULT_SECTIONS = ["入口1", "入口2", "过渡1", "过渡2", "中间1", "中间2", "出口1", "出口2"];
     const STORAGE_KEY = 'tunnelLuxDraft';
     const FIXED_COLS = 7;
@@ -428,7 +446,6 @@
     function resetNew(showToastMsg = true) {
       document.getElementById('tunnelNameInput').value = '新隧道';
       document.getElementById('measureTimeInput').value = getCurrentDateTimeString();
-      // 测量人保留原值，不清空
       container.innerHTML = '';
       DEFAULT_SECTIONS.forEach(n => container.appendChild(createCard(n)));
       markClean();
